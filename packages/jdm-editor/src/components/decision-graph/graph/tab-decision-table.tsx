@@ -13,14 +13,16 @@ export type TabDecisionTableProps = {
 
 export const TabDecisionTable: React.FC<TabDecisionTableProps> = ({ id, manager }) => {
   const graphActions = useDecisionGraphActions();
-  const { nodeTrace, disabled, configurable, content } = useDecisionGraphState(
-    ({ simulate, disabled, configurable, decisionGraph }) => ({
+  const { nodeTrace, disabled, configurable, content, inputsSchema, outputsSchema } = useDecisionGraphState(
+    ({ simulate, disabled, configurable, decisionGraph, inputsSchema, outputsSchema }) => ({
       nodeTrace: match(simulate)
         .with({ result: P._ }, ({ result }) => result?.trace?.[id] as SimulationTrace<SimulationTraceDataTable>)
         .otherwise(() => null),
       disabled,
       configurable,
       content: (decisionGraph?.nodes ?? []).find((node) => node.id === id)?.content,
+      inputsSchema,
+      outputsSchema,
     }),
   );
 
@@ -45,6 +47,8 @@ export const TabDecisionTable: React.FC<TabDecisionTableProps> = ({ id, manager 
       disabled={disabled}
       configurable={configurable}
       activeRules={(activeRules || []).filter((id) => !!id)}
+      inputsSchema={inputsSchema}
+      outputsSchema={outputsSchema}
     />
   );
 };

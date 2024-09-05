@@ -3,6 +3,7 @@ import type React from 'react';
 import { useEffect, useRef } from 'react';
 import { useDebouncedCallback } from 'use-debounce';
 
+import type { SchemaSelectProps } from '../../../src/helpers/components';
 import {
   type DecisionGraphStoreType,
   type DecisionGraphType,
@@ -28,6 +29,9 @@ export type DecisionGraphEmptyType = {
   panels?: DecisionGraphStoreType['state']['panels'];
   onPanelsChange?: DecisionGraphStoreType['listeners']['onPanelsChange'];
 
+  inputsSchema?: SchemaSelectProps[];
+  outputsSchema?: SchemaSelectProps[];
+
   simulate?: DecisionGraphStoreType['state']['simulate'];
 
   onChange?: DecisionGraphStoreType['listeners']['onChange'];
@@ -50,6 +54,8 @@ export const DecisionGraphEmpty: React.FC<DecisionGraphEmptyType> = ({
   defaultActivePanel,
   panels,
   simulate,
+  inputsSchema,
+  outputsSchema,
   onPanelsChange,
   onReactFlowInit,
   onCodeExtension,
@@ -80,6 +86,13 @@ export const DecisionGraphEmpty: React.FC<DecisionGraphEmptyType> = ({
   useEffect(() => {
     stateStore.setState({ name: name ?? 'graph.json' });
   }, [name]);
+
+  useEffect(() => {
+    stateStore.setState({
+      inputsSchema,
+      outputsSchema
+    });
+  }, [inputsSchema, outputsSchema]);
 
   useEffect(() => {
     stateStore.setState({

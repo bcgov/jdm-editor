@@ -7,6 +7,7 @@ import type { EdgeChange, NodeChange, ReactFlowInstance, useEdgesState, useNodes
 import type { StoreApi, UseBoundStore } from 'zustand';
 import { create } from 'zustand';
 
+import { SchemaSelectProps } from '../../../helpers/components';
 import type { CodeEditorProps } from '../../code-editor';
 import { mapToGraphEdge, mapToGraphEdges, mapToGraphNode, mapToGraphNodes } from '../dg-util';
 import type { useGraphClipboard } from '../hooks/use-graph-clipboard';
@@ -71,6 +72,9 @@ export type DecisionGraphStoreType = {
     panels?: PanelType[];
     activePanel?: string;
     onPanelsChange?: (val?: string) => void;
+
+    inputsSchema?: SchemaSelectProps[];
+    outputsSchema?: SchemaSelectProps[];
 
     simulate?: Simulation;
 

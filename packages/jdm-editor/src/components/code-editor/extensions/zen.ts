@@ -15,7 +15,10 @@ import { NodeProp, type SyntaxNode, parseMixed } from '@lezer/common';
 import { tags as t } from '@lezer/highlight';
 import { match } from 'ts-pattern';
 
-import completion from '../../../completion.json';
+import baseCompletion from '../../../completion.json';
+import { SchemaSelectProps } from '../../../helpers/components';
+
+let completion = baseCompletion;
 
 const applyCompletion = (view: EditorView, completion: Completion, from: number, to: number) => {
   const transaction = match(completion.type)
@@ -35,11 +38,6 @@ const applyCompletion = (view: EditorView, completion: Completion, from: number,
 
   view.dispatch(transaction);
 };
-
-const extendedCompletion = completion.map((c) => ({
-  ...c,
-  apply: applyCompletion,
-}));
 
 const hasAutoComplete = (n: SyntaxNode | null): boolean => {
   if (!n) {
@@ -65,16 +63,29 @@ const makeExpressionCompletion =
       return null;
     }
 
+    const extendedCompletion = completion.map((c) => ({
+      ...c,
+      apply: applyCompletion,
+    }));
+
     return {
       from: word?.from ?? 0,
       options: extendedCompletion,
     };
   };
 
-export const completionExtension = () =>
-  autocompletion({
+export const completionExtension = (schema: SchemaSelectProps[] = []) => {
+  const schemaCompletion = schema.map(({field, name}) => ({
+    "label": field,
+    "type": "variable",
+    "detail": name || "",
+    "info": ""
+  }));
+  completion = [...baseCompletion, ...schemaCompletion];
+  return autocompletion({
     override: [makeExpressionCompletion()],
   });
+}
 
 export const hoverExtension = () =>
   hoverTooltip((view, pos) => {
@@ -155,11 +166,12 @@ const zenTemplateLanguage = new LanguageSupport(
 
 type extensionOptions = {
   type: 'unary' | 'standard' | 'template';
+  schema: SchemaSelectProps[]
 };
 
-export const zenExtensions = ({ type }: extensionOptions) => [
+export const zenExtensions = ({ type, schema }: extensionOptions) => [
   type !== 'template' ? zenLanguage : zenTemplateLanguage,
-  completionExtension(),
+  completionExtension(schema),
   hoverExtension(),
   closeBrackets(),
   keymap.of(closeBracketsKeymap),

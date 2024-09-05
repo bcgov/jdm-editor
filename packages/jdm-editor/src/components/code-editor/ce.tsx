@@ -6,6 +6,7 @@ import clsx from 'clsx';
 import React, { useEffect, useMemo, useRef } from 'react';
 
 import { composeRefs } from '../../helpers/compose-refs';
+import { useDecisionGraphState } from '../decision-graph';
 import './ce.scss';
 import { zenExtensions, zenHighlightDark, zenHighlightLight } from './extensions/zen';
 
@@ -60,6 +61,11 @@ export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
     const codeMirror = useRef<EditorView>(null);
     const { token } = theme.useToken();
 
+    const { inputsSchema, outputsSchema } = useDecisionGraphState(
+      ({ inputsSchema = [], outputsSchema = [] }) => ({ inputsSchema, outputsSchema }),
+    );
+    const schema = [...inputsSchema, ...outputsSchema];
+
     const compartment = useMemo(
       () => ({
         zenExtension: new Compartment(),
@@ -84,7 +90,7 @@ export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
           extensions: [
             EditorView.lineWrapping,
             bracketMatching(),
-            compartment.zenExtension.of(zenExtensions({ type })),
+            compartment.zenExtension.of(zenExtensions({ type, schema })),
             compartment.updateListener.of(updateListener(onChange, onStateChange)),
             compartment.theme.of(editorTheme(token.mode === 'dark')),
             compartment.placeholder.of(placeholder ? placeholderExt(placeholder) : []),
@@ -167,9 +173,9 @@ export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
       }
 
       codeMirror.current.dispatch({
-        effects: compartment.zenExtension.reconfigure(zenExtensions({ type })),
+        effects: compartment.zenExtension.reconfigure(zenExtensions({ type, schema })),
       });
-    }, [type]);
+    }, [type, schema]);
 
     useEffect(() => {
       if (!codeMirror.current) {
