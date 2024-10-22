@@ -6,6 +6,7 @@ import { P, match } from 'ts-pattern';
 import { useDecisionGraphActions, useDecisionGraphListeners, useDecisionGraphState } from '../context/dg-store.context';
 import { FunctionKind, useFunctionKind } from '../nodes/specifications/function.specification';
 import type { SimulationTrace, SimulationTraceDataFunction } from '../types/simulation.types';
+import { SchemaSelectProps } from 'jdm-editor/src/helpers/components';
 
 const Function = React.lazy(async () => {
   const functionImport = await import('../../function');
@@ -19,6 +20,9 @@ export type TabFunctionProps = {
 export const TabFunction: React.FC<TabFunctionProps> = ({ id }) => {
   const kind = useFunctionKind(id);
   const graphActions = useDecisionGraphActions();
+  const { inputsSchema, outputsSchema } = useDecisionGraphState(
+    ({ inputsSchema = [], outputsSchema = [] }) => ({ inputsSchema, outputsSchema }),
+  );
   const onFunctionReady = useDecisionGraphListeners((s) => s.onFunctionReady);
   const [monaco, setMonaco] = useState<Monaco>();
   const { nodeTrace, disabled, content, additionalModules, nodeError } = useDecisionGraphState(
@@ -62,9 +66,19 @@ export const TabFunction: React.FC<TabFunctionProps> = ({ id }) => {
       });
     });
 
-    monaco.languages.typescript.javascriptDefaults.setExtraLibs(newExtraLibs);
+    const schemaTypeDefs = [
+      {
+        filePath: 'node:InputSchema',
+        content: `/**
+                   * @typedef {Object} InputSchema
+                   ${inputsSchema.map(({field, name}: SchemaSelectProps) => `* @property {any} ${field} - ${name}`).join("\n")}
+                   */`,
+      }
+    ];
+
+    monaco.languages.typescript.javascriptDefaults.setExtraLibs([...newExtraLibs, ...schemaTypeDefs]);
     onFunctionReady?.(monaco);
-  }, [JSON.stringify(additionalModules), monaco, onFunctionReady]);
+  }, [JSON.stringify(additionalModules), monaco, onFunctionReady, inputsSchema, outputsSchema]);
 
   return (
     <Suspense fallback={<Spin />}>
