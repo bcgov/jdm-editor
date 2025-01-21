@@ -3,6 +3,252 @@
 All notable changes to this project will be documented in this file.
 See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
 
+## [1.32.3](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.32.2...@gorules/jdm-editor@1.32.3) (2025-01-10)
+
+### Bug Fixes
+
+- input output schema diff logic ([#140](https://github.com/gorules/jdm-editor/issues/140)) ([605c610](https://github.com/gorules/jdm-editor/commit/605c610bbb4360e1856174d674c9a1dde3b9f760))
+
+## [1.32.2](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.32.1...@gorules/jdm-editor@1.32.2) (2025-01-08)
+
+### Bug Fixes
+
+- request and response diff ([#139](https://github.com/gorules/jdm-editor/issues/139)) ([83d6067](https://github.com/gorules/jdm-editor/commit/83d606700631e156ccf1c4ae5d4b6c32650c1967))
+
+## [1.32.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.32.0...@gorules/jdm-editor@1.32.1) (2024-12-26)
+
+### Bug Fixes
+
+- remove stoplight ([#137](https://github.com/gorules/jdm-editor/issues/137)) ([a5ece23](https://github.com/gorules/jdm-editor/commit/a5ece238abea5ac7425560780c83592402b01103))
+
+# [1.32.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.31.1...@gorules/jdm-editor@1.32.0) (2024-12-25)
+
+### Features
+
+- json schema validation ([#136](https://github.com/gorules/jdm-editor/issues/136)) ([4419202](https://github.com/gorules/jdm-editor/commit/4419202b173065934ba221bc15e7d7a5047b2e79))
+
+## [1.31.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.31.0...@gorules/jdm-editor@1.31.1) (2024-12-20)
+
+### Bug Fixes
+
+- remove function additional modules ([#135](https://github.com/gorules/jdm-editor/issues/135)) ([1c4adc8](https://github.com/gorules/jdm-editor/commit/1c4adc89289ac1aeb7fcb1cad3f6446cccef5f9d))
+
+# [1.31.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.30.0...@gorules/jdm-editor@1.31.0) (2024-12-19)
+
+### Features
+
+- customizable left panel ([#132](https://github.com/gorules/jdm-editor/issues/132)) ([3cf3a3b](https://github.com/gorules/jdm-editor/commit/3cf3a3b1ec8441cd945b27bfc963d5d550bdd617))
+
+# [1.30.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.29.0...@gorules/jdm-editor@1.30.0) (2024-12-13)
+
+### Features
+
+- store decision table size ([#130](https://github.com/gorules/jdm-editor/issues/130)) ([7ffa470](https://github.com/gorules/jdm-editor/commit/7ffa4702c195e3c0c63471759be7bc5e77ac3104))
+
+# [1.29.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.28.1...@gorules/jdm-editor@1.29.0) (2024-12-09)
+
+### Features
+
+- add libraries tab to functions ([#129](https://github.com/gorules/jdm-editor/issues/129)) ([5339014](https://github.com/gorules/jdm-editor/commit/5339014784670d8bbcdf3bb417d5079c017fd625))
+
+## [1.28.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.28.0...@gorules/jdm-editor@1.28.1) (2024-12-08)
+
+### Bug Fixes
+
+- incorrect rollup externals ([#128](https://github.com/gorules/jdm-editor/issues/128)) ([e5f8b19](https://github.com/gorules/jdm-editor/commit/e5f8b19854305d93b0ac8e45603accff23aff612))
+
+# [1.28.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.27.1...@gorules/jdm-editor@1.28.0) (2024-12-08)
+
+### Features
+
+- ui/ux improvements ([#127](https://github.com/gorules/jdm-editor/issues/127)) ([d5ad95d](https://github.com/gorules/jdm-editor/commit/d5ad95deec6beaf4bfb3cab753d3af142110f60a))
+
+## [1.27.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.27.0...@gorules/jdm-editor@1.27.1) (2024-12-07)
+
+### Bug Fixes
+
+- add union for error and result, allowing both to be displayed ([#126](https://github.com/gorules/jdm-editor/issues/126)) ([56bc11c](https://github.com/gorules/jdm-editor/commit/56bc11c2688e7e4edebd797a095e559a1e707ed1))
+
+# [1.27.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.26.0...@gorules/jdm-editor@1.27.0) (2024-12-06)
+
+### Features
+
+- improve simulator ([#125](https://github.com/gorules/jdm-editor/issues/125)) ([6701b0e](https://github.com/gorules/jdm-editor/commit/6701b0ee4fda2cdd614cbdf33562a2b7ed8b28cd))
+
+# [1.26.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.25.0...@gorules/jdm-editor@1.26.0) (2024-12-03)
+
+**Note:** Version bump only for package @gorules/jdm-editor
+
+# [1.25.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.24.0...@gorules/jdm-editor@1.25.0) (2024-12-03)
+
+### Features
+
+- graph diff ([#118](https://github.com/gorules/jdm-editor/issues/118)) ([222c691](https://github.com/gorules/jdm-editor/commit/222c69103eb1edc0c3970f683db54a1d0f5ac50c))
+
+# [1.24.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.23.3...@gorules/jdm-editor@1.24.0) (2024-11-29)
+
+### Bug Fixes
+
+- blinking on hover and add better exports for esm ([#113](https://github.com/gorules/jdm-editor/issues/113)) ([5a65f41](https://github.com/gorules/jdm-editor/commit/5a65f4116869f781cd63a9f77d0cb5fd9fe592f3))
+- formatting ([e729347](https://github.com/gorules/jdm-editor/commit/e729347ede15e7f0c67f0cc3715e4ebb833a83b4))
+
+### Features
+
+- update completion.json for trim() ([#123](https://github.com/gorules/jdm-editor/issues/123)) ([2da863c](https://github.com/gorules/jdm-editor/commit/2da863c8e458c90418986da78274f07ce67ad24b))
+
+## [1.23.3](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.23.2...@gorules/jdm-editor@1.23.3) (2024-11-15)
+
+### Bug Fixes
+
+- optional wasm in function ([#115](https://github.com/gorules/jdm-editor/issues/115)) ([c51daec](https://github.com/gorules/jdm-editor/commit/c51daec2a3156465d07834d11499a57a0bb1a97b))
+
+## [1.23.2](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.23.1...@gorules/jdm-editor@1.23.2) (2024-11-14)
+
+### Bug Fixes
+
+- add default for exports field ([0170f17](https://github.com/gorules/jdm-editor/commit/0170f177d5b0b0fdaad23a98907fb1aa436da3d7))
+
+## [1.23.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.23.0...@gorules/jdm-editor@1.23.1) (2024-10-30)
+
+### Bug Fixes
+
+- settings input field value ([#112](https://github.com/gorules/jdm-editor/issues/112)) ([f26a5e4](https://github.com/gorules/jdm-editor/commit/f26a5e4c3b141a9758bd2a4cfaf43f91ba1dcab6))
+
+# [1.23.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.22.2...@gorules/jdm-editor@1.23.0) (2024-10-27)
+
+### Features
+
+- improve graph performance ([#111](https://github.com/gorules/jdm-editor/issues/111)) ([1b84189](https://github.com/gorules/jdm-editor/commit/1b841895242c01013c50a53dc26c12f39dff2d7a))
+
+## [1.22.2](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.22.1...@gorules/jdm-editor@1.22.2) (2024-10-25)
+
+### Bug Fixes
+
+- default schema value ([#110](https://github.com/gorules/jdm-editor/issues/110)) ([f810ec0](https://github.com/gorules/jdm-editor/commit/f810ec035dbf7ba716f4549634ae618d4bf678e2))
+
+## [1.22.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.22.0...@gorules/jdm-editor@1.22.1) (2024-10-24)
+
+### Bug Fixes
+
+- export import schema fix ([#109](https://github.com/gorules/jdm-editor/issues/109)) ([8f03bbf](https://github.com/gorules/jdm-editor/commit/8f03bbfcd78142335cf30721797237fdf435f973))
+- node schema update ([#108](https://github.com/gorules/jdm-editor/issues/108)) ([9607572](https://github.com/gorules/jdm-editor/commit/96075729a3a5266168f388a399e244e47ac30b93))
+
+# [1.22.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.21.0...@gorules/jdm-editor@1.22.0) (2024-10-24)
+
+### Features
+
+- performance optimisations ([#106](https://github.com/gorules/jdm-editor/issues/106)) ([ab1727a](https://github.com/gorules/jdm-editor/commit/ab1727a5a43962ca17259d08cd209826b8e28f2c))
+
+# [1.21.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.20.5...@gorules/jdm-editor@1.21.0) (2024-10-23)
+
+### Features
+
+- passthrough nodes ([#105](https://github.com/gorules/jdm-editor/issues/105)) ([18b61db](https://github.com/gorules/jdm-editor/commit/18b61dbdc367600f9caa18c0b558a444320ae044))
+
+## [1.20.5](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.20.4...@gorules/jdm-editor@1.20.5) (2024-10-17)
+
+### Bug Fixes
+
+- incorrect type cache ([#102](https://github.com/gorules/jdm-editor/issues/102)) ([606e129](https://github.com/gorules/jdm-editor/commit/606e1296ef03f703a08e27a3a1c1dd245a6b6b5c))
+
+## [1.20.4](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.20.3...@gorules/jdm-editor@1.20.4) (2024-10-16)
+
+### Bug Fixes
+
+- inferred types ([#101](https://github.com/gorules/jdm-editor/issues/101)) ([1f9d792](https://github.com/gorules/jdm-editor/commit/1f9d792ac798ff58b0c326baf93295a380bedde2))
+
+## [1.20.3](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.20.2...@gorules/jdm-editor@1.20.3) (2024-10-16)
+
+### Bug Fixes
+
+- improve graph performance ([#100](https://github.com/gorules/jdm-editor/issues/100)) ([081d8f2](https://github.com/gorules/jdm-editor/commit/081d8f22bfe43db3ee1e997e98db97830a0aab57))
+
+## [1.20.2](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.20.1...@gorules/jdm-editor@1.20.2) (2024-10-15)
+
+### Bug Fixes
+
+- outputs error ([#97](https://github.com/gorules/jdm-editor/issues/97)) ([015035c](https://github.com/gorules/jdm-editor/commit/015035cd4ccfd220da8342a2fda6a011645b3a47))
+
+## [1.20.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.20.0...@gorules/jdm-editor@1.20.1) (2024-10-15)
+
+### Bug Fixes
+
+- imports ([#96](https://github.com/gorules/jdm-editor/issues/96)) ([4367d30](https://github.com/gorules/jdm-editor/commit/4367d303b44fb82b5bc537c5682beeb9b3e9ecf3))
+
+# [1.20.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.19.1...@gorules/jdm-editor@1.20.0) (2024-10-14)
+
+### Features
+
+- add type inference ([#95](https://github.com/gorules/jdm-editor/issues/95)) ([fa59876](https://github.com/gorules/jdm-editor/commit/fa5987668e2ae4c536677022dabc5f94472a34c9))
+
+## [1.19.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.19.0...@gorules/jdm-editor@1.19.1) (2024-10-11)
+
+### Bug Fixes
+
+- false positive linter warning ([#94](https://github.com/gorules/jdm-editor/issues/94)) ([4eabb40](https://github.com/gorules/jdm-editor/commit/4eabb4081510c3cb5fe7f3321104c5ebedb01be4))
+
+# [1.19.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.18.2...@gorules/jdm-editor@1.19.0) (2024-10-11)
+
+### Features
+
+- strict code editor ([#93](https://github.com/gorules/jdm-editor/issues/93)) ([849f888](https://github.com/gorules/jdm-editor/commit/849f8888cc2b903aea808e8aa76f21c1aeeb6963))
+
+## [1.18.2](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.18.1...@gorules/jdm-editor@1.18.2) (2024-10-09)
+
+### Bug Fixes
+
+- function output type ([#92](https://github.com/gorules/jdm-editor/issues/92)) ([8f851ce](https://github.com/gorules/jdm-editor/commit/8f851ce8dab0bb07a393e044bd2e2b3881831cd2))
+
+## [1.18.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.18.0...@gorules/jdm-editor@1.18.1) (2024-10-04)
+
+### Bug Fixes
+
+- codemirror keymap ([#91](https://github.com/gorules/jdm-editor/issues/91)) ([2f05c46](https://github.com/gorules/jdm-editor/commit/2f05c467d6afe130becf927ed2bf948178972692))
+
+# [1.18.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.17.2...@gorules/jdm-editor@1.18.0) (2024-10-01)
+
+### Bug Fixes
+
+- function type signature ([18b917f](https://github.com/gorules/jdm-editor/commit/18b917f028904910271ce0ba06802eba1f27396c))
+- improve handle styles, fix intellisense for some nodes ([#89](https://github.com/gorules/jdm-editor/issues/89)) ([57465e2](https://github.com/gorules/jdm-editor/commit/57465e268c053241cf4d88c9fe8f8155b4dfb584))
+- storybook ([9d463ff](https://github.com/gorules/jdm-editor/commit/9d463ff642370023841956167255a8c106996223))
+- storybook components ([40e8d97](https://github.com/gorules/jdm-editor/commit/40e8d977514d222b49c7584dbf7a53a252ce8146))
+
+## [1.17.2](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.17.1...@gorules/jdm-editor@1.17.2) (2024-09-23)
+
+**Note:** Version bump only for package @gorules/jdm-editor
+
+## [1.17.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.17.0...@gorules/jdm-editor@1.17.1) (2024-09-23)
+
+### Bug Fixes
+
+- improve intellisense ([#87](https://github.com/gorules/jdm-editor/issues/87)) ([7e9631b](https://github.com/gorules/jdm-editor/commit/7e9631b28bbe451e10cbd0050fb88ac8692c7acf))
+
+# [1.17.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.16.1...@gorules/jdm-editor@1.17.0) (2024-09-23)
+
+### Features
+
+- intellisense ([#86](https://github.com/gorules/jdm-editor/issues/86)) ([63f939a](https://github.com/gorules/jdm-editor/commit/63f939a1a06bdeef1f647bcccc9b7a18c2e956c1))
+
+## [1.16.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.16.0...@gorules/jdm-editor@1.16.1) (2024-09-21)
+
+### Bug Fixes
+
+- http module types ([#85](https://github.com/gorules/jdm-editor/issues/85)) ([ca496c1](https://github.com/gorules/jdm-editor/commit/ca496c113f799baea0efa6ee71dd72b46cb9be5e))
+
+# [1.16.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.15.1...@gorules/jdm-editor@1.16.0) (2024-09-16)
+
+### Features
+
+- editor restyle ([#82](https://github.com/gorules/jdm-editor/issues/82)) ([12d4913](https://github.com/gorules/jdm-editor/commit/12d4913da2000ddd12be7c0f4af0d42706adfd8d))
+
+## [1.15.1](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.15.0...@gorules/jdm-editor@1.15.1) (2024-09-11)
+
+### Bug Fixes
+
+- code editor type in decision table ([#81](https://github.com/gorules/jdm-editor/issues/81)) ([91e082d](https://github.com/gorules/jdm-editor/commit/91e082d4f395ce986ecbc873b01cecdc2b35c24f))
+- use correct value prop for boolean fields ([#83](https://github.com/gorules/jdm-editor/issues/83)) ([e5993f5](https://github.com/gorules/jdm-editor/commit/e5993f55723d11407b8f79fc61979454cdb565dd)), closes [#79](https://github.com/gorules/jdm-editor/issues/79)
+
 # [1.15.0](https://github.com/gorules/jdm-editor/compare/@gorules/jdm-editor@1.14.0...@gorules/jdm-editor@1.15.0) (2024-08-30)
 
 ### Features

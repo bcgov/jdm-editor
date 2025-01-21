@@ -6,11 +6,11 @@ import { useDebouncedCallback } from 'use-debounce';
 import type { SchemaSelectProps } from '../../../src/helpers/components';
 import {
   type DecisionGraphStoreType,
-  type DecisionGraphType,
   useDecisionGraphActions,
   useDecisionGraphRaw,
   useDecisionGraphState,
 } from './context/dg-store.context';
+import { type DecisionGraphType } from './dg-types';
 
 export type DecisionGraphEmptyType = {
   id?: string;
@@ -95,9 +95,7 @@ export const DecisionGraphEmpty: React.FC<DecisionGraphEmptyType> = ({
   }, [inputsSchema, outputsSchema]);
 
   useEffect(() => {
-    stateStore.setState({
-      simulate,
-    });
+    stateStore.setState({ simulate });
   }, [simulate]);
 
   useEffect(() => {

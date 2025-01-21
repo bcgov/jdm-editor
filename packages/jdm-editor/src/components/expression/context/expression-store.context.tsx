@@ -1,3 +1,4 @@
+import type { VariableType } from '@gorules/zen-engine-wasm';
 import equal from 'fast-deep-equal/es6/react';
 import { produce } from 'immer';
 import React, { useMemo } from 'react';
@@ -5,6 +6,7 @@ import type { StoreApi, UseBoundStore } from 'zustand';
 import { create } from 'zustand';
 
 import type { SimulationTraceDataExpression } from '../../decision-graph';
+import type { DiffMetadata } from '../../decision-graph/dg-types';
 
 const ExpressionStoreContext = React.createContext<
   UseBoundStore<StoreApi<ExpressionStore>> & {
@@ -16,6 +18,7 @@ export type ExpressionEntry = {
   id: string;
   key: string;
   value: string;
+  _diff?: DiffMetadata;
 };
 
 export type ExpressionStore = {
@@ -32,6 +35,8 @@ export type ExpressionStore = {
   swapRows: (sourceIndex: number, targetIndex: number) => void;
   updateRow: (index: number, update: Partial<Omit<ExpressionEntry, 'id'>>) => void;
   removeRow: (index: number) => void;
+
+  inputVariableType?: VariableType;
 };
 
 type ExpressionStoreProviderProps = {

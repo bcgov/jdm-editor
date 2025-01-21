@@ -1,38 +1,31 @@
 import { CloudDownloadOutlined, CloudUploadOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
-import { Button, Dropdown, message } from 'antd';
+import { Button, Dropdown, Tooltip, message } from 'antd';
 import React, { useRef } from 'react';
 
 import { exportExcelFile, readFromExcel } from '../../../helpers/excel-file-utils';
-import {
-  type DecisionEdge,
-  type DecisionNode,
-  useDecisionGraphActions,
-  useDecisionGraphRaw,
-  useDecisionGraphState,
-} from '../context/dg-store.context';
+import { decisionModelSchema } from '../../../helpers/schema';
+import { useDecisionGraphActions, useDecisionGraphRaw, useDecisionGraphState } from '../context/dg-store.context';
+import { type DecisionEdge, type DecisionNode } from '../dg-types';
 import { NodeKind } from '../nodes/specifications/specification-types';
 
 const DecisionContentType = 'application/vnd.gorules.decision';
 
-export type GraphAsideProps = {
+export type GraphSideToolbarProps = {
   //
 };
 
-export const GraphAside: React.FC<GraphAsideProps> = () => {
+export const GraphSideToolbar: React.FC<GraphSideToolbarProps> = () => {
   const decisionGraphRaw = useDecisionGraphRaw();
   const fileInput = useRef<HTMLInputElement>(null);
   const excelFileInput = useRef<HTMLInputElement>(null);
 
   const { setDecisionGraph, setActivePanel } = useDecisionGraphActions();
-  const { decisionGraph, disabled, panels, activePanel } = useDecisionGraphState(
-    ({ decisionGraph, disabled, panels, activePanel }) => ({
-      decisionGraph,
-      disabled,
-      panels,
-      activePanel,
-    }),
-  );
+  const { disabled, panels, activePanel } = useDecisionGraphState(({ disabled, panels, activePanel }) => ({
+    disabled,
+    panels,
+    activePanel,
+  }));
 
   const handleUploadInput = async (event: any) => {
     const fileList = event?.target?.files as FileList;
@@ -40,7 +33,9 @@ export const GraphAside: React.FC<GraphAsideProps> = () => {
     reader.onload = function (e) {
       try {
         const parsed: any = JSON.parse(e?.target?.result as string);
-        if (parsed?.contentType !== DecisionContentType) throw new Error('Invalid content type');
+        if (parsed?.contentType !== DecisionContentType) {
+          throw new Error('Invalid content type');
+        }
 
         const nodes: DecisionNode[] = Array.isArray(parsed?.nodes) ? parsed.nodes : [];
         const nodeIds = nodes.map((node) => node.id);
@@ -48,10 +43,20 @@ export const GraphAside: React.FC<GraphAsideProps> = () => {
         const edges: DecisionEdge[] = (parsed.edges as DecisionEdge[]).filter(
           (edge) => nodeIds.includes(edge?.targetId) && nodeIds.includes(edge?.sourceId),
         );
-        setDecisionGraph({
+
+        const modelParsed = decisionModelSchema.safeParse({
           nodes,
           edges,
+          settings: parsed?.settings,
         });
+
+        if (!modelParsed.success) {
+          console.log(modelParsed.error?.message);
+          message.error(modelParsed.error?.message);
+          return;
+        }
+
+        setDecisionGraph(modelParsed.data);
       } catch (e: any) {
         message.error(e.message);
       }
@@ -73,6 +78,7 @@ export const GraphAside: React.FC<GraphAsideProps> = () => {
 
         const nodesFromExcel = await readFromExcel(buffer);
 
+        const { decisionGraph } = decisionGraphRaw.stateStore.getState();
         const updatedNodes = decisionGraph.nodes.map((node) => {
           let _node = node;
           // updating existing nodes
@@ -88,11 +94,19 @@ export const GraphAside: React.FC<GraphAsideProps> = () => {
           .filter((node) => !updatedNodes.some((existingNode) => existingNode.id === node.id))
           .map((newNode, index) => ({ ...newNode, position: { x: index * 250, y: 0 } }));
 
-        setDecisionGraph({
+        const modelParsed = decisionModelSchema.safeParse({
           nodes: [...updatedNodes, ...newNodes],
           edges: decisionGraph.edges,
+          settings: decisionGraph.settings,
         });
 
+        if (!modelParsed.success) {
+          console.log(modelParsed.error?.message);
+          message.error(modelParsed.error?.message);
+          return;
+        }
+
+        setDecisionGraph(modelParsed.data);
         message.success('Excel file has been uploaded successfully!');
       };
     } catch {
@@ -103,6 +117,7 @@ export const GraphAside: React.FC<GraphAsideProps> = () => {
   const downloadJDM = async () => {
     try {
       const { name } = decisionGraphRaw.stateStore.getState();
+      const { decisionGraph } = decisionGraphRaw.stateStore.getState();
       // create file in browser
       const fileName = `${name.replaceAll('.json', '')}.json`;
       const json = JSON.stringify(
@@ -110,6 +125,7 @@ export const GraphAside: React.FC<GraphAsideProps> = () => {
           contentType: DecisionContentType,
           nodes: decisionGraph.nodes,
           edges: decisionGraph.edges,
+          settings: decisionGraph.settings,
         },
         null,
         2,
@@ -134,6 +150,7 @@ export const GraphAside: React.FC<GraphAsideProps> = () => {
 
   const downloadJDMExcel = async (name: string = 'decision tables') => {
     try {
+      const { decisionGraph } = decisionGraphRaw.stateStore.getState();
       const decisionTableNodes = decisionGraph.nodes
         .filter((node) => node.type === NodeKind.DecisionTable)
         .map((decisionTable) => ({
@@ -209,17 +226,27 @@ export const GraphAside: React.FC<GraphAsideProps> = () => {
           </Dropdown>
         </div>
         <div className={'grl-dg__aside__side-bar__bottom'}>
-          {(panels || []).map((panel) => (
-            <Button
-              key={panel.id}
-              type={activePanel === panel.id ? 'default' : 'text'}
-              icon={panel.icon}
-              onClick={() => {
-                if (panel?.onClick) return panel.onClick();
-                if (panel?.renderPanel) setActivePanel(activePanel === panel.id ? undefined : panel.id);
-              }}
-            />
-          ))}
+          {(panels || []).map((panel) => {
+            const isActive = activePanel === panel.id;
+            return (
+              <Tooltip
+                key={panel.id}
+                title={`${!isActive ? 'Open' : 'Close'} ${panel.title.toLowerCase()} panel`}
+                placement={'right'}
+              >
+                <Button
+                  key={panel.id}
+                  type='text'
+                  icon={panel.icon}
+                  style={{ background: isActive ? 'rgba(0, 0, 0, 0.1)' : undefined }}
+                  onClick={() => {
+                    if (panel?.onClick) return panel.onClick();
+                    if (panel?.renderPanel) setActivePanel(isActive ? undefined : panel.id);
+                  }}
+                />
+              </Tooltip>
+            );
+          })}
         </div>
       </div>
     </div>

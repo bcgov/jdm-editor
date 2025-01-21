@@ -1,27 +1,37 @@
-import { CloseOutlined, CompressOutlined, RightOutlined, WarningOutlined } from '@ant-design/icons';
+import { CloseOutlined, CompressOutlined, LeftOutlined, WarningOutlined } from '@ant-design/icons';
 import { Button, Modal, Tooltip, Typography, message } from 'antd';
 import clsx from 'clsx';
+import equal from 'fast-deep-equal';
 import React, { type MutableRefObject, forwardRef, useImperativeHandle, useMemo, useRef, useState } from 'react';
-import type { Connection, ProOptions, ReactFlowInstance, XYPosition } from 'reactflow';
-import { ControlButton } from 'reactflow';
-import ReactFlow, { Background, Controls, useEdgesState, useNodesState } from 'reactflow';
+import type { Connection, Node, ProOptions, ReactFlowInstance, XYPosition } from 'reactflow';
+import ReactFlow, {
+  Background,
+  ControlButton,
+  Controls,
+  SelectionMode,
+  getOutgoers,
+  useEdgesState,
+  useNodesState,
+} from 'reactflow';
 import 'reactflow/dist/style.css';
 import { P, match } from 'ts-pattern';
 
 import { nodeSchema } from '../../../helpers/schema';
 import {
   type DecisionGraphStoreType,
-  type DecisionNode,
+  type ExposedStore,
   useDecisionGraphActions,
   useDecisionGraphListeners,
+  useDecisionGraphRaw,
   useDecisionGraphReferences,
   useDecisionGraphState,
 } from '../context/dg-store.context';
 import { edgeFunction } from '../custom-edge';
+import { type DecisionNode } from '../dg-types';
 import { mapToDecisionEdge } from '../dg-util';
 import '../dg.scss';
 import { useGraphClipboard } from '../hooks/use-graph-clipboard';
-import type { CustomNodeSpecification } from '../nodes/custom-node/index';
+import type { CustomNodeSpecification } from '../nodes/custom-node';
 import { GraphNode } from '../nodes/graph-node';
 import type { MinimalNodeProps } from '../nodes/specifications/specification-types';
 import { NodeKind } from '../nodes/specifications/specification-types';
@@ -34,7 +44,9 @@ export type GraphProps = {
   reactFlowProOptions?: ProOptions;
 };
 
-export type GraphRef = DecisionGraphStoreType['actions'];
+export type GraphRef = DecisionGraphStoreType['actions'] & {
+  stateStore: ExposedStore<DecisionGraphStoreType['state']>;
+};
 
 const defaultNodeTypes = Object.entries(nodeSpecification).reduce(
   (acc, [key, value]) => ({
@@ -45,7 +57,7 @@ const defaultNodeTypes = Object.entries(nodeSpecification).reduce(
         return (
           prevProps.id === nextProps.id &&
           prevProps.selected === nextProps.selected &&
-          prevProps.data === nextProps.data
+          equal(prevProps.data, nextProps.data)
         );
       },
     ),
@@ -57,7 +69,7 @@ const edgeTypes = {
   edge: React.memo(edgeFunction(null)),
 };
 
-export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, className }, ref) => {
+export const Graph = forwardRef<GraphRef, GraphProps>(function GraphInner({ reactFlowProOptions, className }, ref) {
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const reactFlowInstance = useRef<ReactFlowInstance>(null);
 
@@ -66,6 +78,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
 
   const [componentsOpened, setComponentsOpened] = useState(true);
 
+  const raw = useDecisionGraphRaw();
   const graphActions = useDecisionGraphActions();
   const graphReferences = useDecisionGraphReferences((s) => s);
   const { onReactFlowInit } = useDecisionGraphListeners(({ onReactFlowInit }) => ({ onReactFlowInit }));
@@ -81,6 +94,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
   graphReferences.nodesState.current = nodesState;
   graphReferences.edgesState.current = edgesState;
   graphReferences.graphClipboard.current = useGraphClipboard(reactFlowInstance, reactFlowWrapper);
+  graphReferences.reactFlowInstance.current = reactFlowInstance.current;
 
   const customNodeRenderer = useMemo(() => {
     return React.memo(
@@ -119,7 +133,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
         return (
           prevProps.id === nextProps.id &&
           prevProps.selected === nextProps.selected &&
-          prevProps.data === nextProps.data
+          equal(prevProps.data, nextProps.data)
         );
       },
     );
@@ -135,7 +149,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
             return (
               prevProps.id === nextProps.id &&
               prevProps.selected === nextProps.selected &&
-              prevProps.data === nextProps.data
+              equal(prevProps.data, nextProps.data)
             );
           },
         ),
@@ -207,7 +221,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
 
     if (customSpecification.onNodeAdd) {
       try {
-        newNode = await customSpecification.onNodeAdd(newNode);
+        newNode = (await customSpecification.onNodeAdd(newNode as any)) as any;
       } catch {
         return;
       }
@@ -230,7 +244,9 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
       return false;
     }
 
+    const [nodes] = nodesState;
     const [edges] = edgesState;
+
     const hasDuplicate = edges.some(
       (edge) =>
         edge.source === connection.source &&
@@ -239,7 +255,25 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
         (edge.targetHandle ?? null) === (connection.targetHandle ?? null),
     );
 
-    return !hasDuplicate;
+    const target = nodes.find((node) => node.id === connection.target);
+    if (!target || target.id === connection.source) {
+      return false;
+    }
+
+    const hasCycle = (node: Node, visited = new Set()) => {
+      if (visited.has(node.id)) {
+        return false;
+      }
+
+      visited.add(node.id);
+
+      for (const outgoer of getOutgoers(node, nodes, edges)) {
+        if (outgoer.id === connection.source) return true;
+        if (hasCycle(outgoer, visited)) return true;
+      }
+    };
+
+    return !hasDuplicate && !hasCycle(target);
   };
 
   const onDrop = (event: React.DragEvent) => {
@@ -255,7 +289,7 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
 
     try {
       elementPosition = JSON.parse(event.dataTransfer.getData('relativePosition'));
-    } catch (e) {
+    } catch {
       return;
     }
     const position = reactFlowInstance.current.project({
@@ -289,7 +323,10 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
     graphActions.addEdges([mapToDecisionEdge(edge)]);
   };
 
-  useImperativeHandle(ref, () => graphActions);
+  useImperativeHandle(ref, () => ({
+    ...graphActions,
+    stateStore: raw.stateStore,
+  }));
 
   return (
     <div
@@ -315,43 +352,80 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
             style={{
               position: 'absolute',
               top: 8,
-              left: 8,
+              right: 8,
               zIndex: 1,
             }}
           >
             <Tooltip placement='right' title='Components'>
-              <Button icon={<RightOutlined />} onClick={() => setComponentsOpened(true)} />
+              <Button icon={<LeftOutlined style={{ fontSize: 12 }} />} onClick={() => setComponentsOpened(true)} />
             </Tooltip>
           </div>
         )}
-        {!disabled && componentsOpened && (
-          <div className={'grl-dg__aside__menu'}>
-            <>
-              <div className={'grl-dg__aside__menu__heading'}>
-                <div className={'grl-dg__aside__menu__heading__text'}>
-                  <Typography.Text strong style={{ marginBottom: 0 }}>
-                    Components
-                  </Typography.Text>
-                </div>
-                <Button
-                  type={'text'}
-                  size='small'
-                  icon={<CloseOutlined />}
-                  onClick={() => setComponentsOpened(false)}
-                ></Button>
-              </div>
-              <div className={'grl-dg__aside__menu__content'}>
-                <GraphComponents inputDisabled={hasInputNode} disabled={disabled} />
-              </div>
-            </>
-          </div>
-        )}
-        <div className={'content-wrapper'}>
+        <div
+          tabIndex={0}
+          className={'content-wrapper'}
+          onKeyDown={(e) => {
+            const [nodes] = nodesState;
+            const [edges] = edgesState;
+
+            if (e.key === 'c' && e.metaKey) {
+              const selectedNodeIds = nodesState[0].filter((n) => n.selected).map(({ id }) => id);
+              if (selectedNodeIds.length === 0) {
+                return;
+              }
+
+              graphActions.copyNodes(selectedNodeIds);
+              e.preventDefault();
+            } else if (e.key === 'd' && e.metaKey) {
+              if (!disabled) {
+                const selectedNodeIds = nodes.filter((n) => n.selected).map(({ id }) => id);
+                if (selectedNodeIds.length === 0) {
+                  return;
+                }
+
+                graphActions.duplicateNodes(selectedNodeIds);
+              }
+              e.preventDefault();
+            } else if (e.key === 'Backspace') {
+              if (!disabled) {
+                const selectedNodes = nodes.filter((n) => n.selected);
+                const selectedEdges = edges.filter((e) => e.selected);
+
+                if (selectedNodes.length > 0) {
+                  const length = selectedNodes.length;
+                  const text = length > 1 ? 'nodes' : 'node';
+                  Modal.confirm({
+                    icon: null,
+                    title: `Delete ${text}`,
+                    content: (
+                      <Typography.Text>
+                        Are you sure you want to delete {length > 1 ? `${length} ${text}` : text}?
+                      </Typography.Text>
+                    ),
+                    okButtonProps: { danger: true },
+                    onOk: () => {
+                      if (selectedEdges.length > 0) {
+                        graphActions.removeEdges(selectedEdges.map((e) => e.id));
+                      }
+                      graphActions.removeNodes(selectedNodes.map((n) => n.id));
+                    },
+                  });
+                } else if (selectedEdges.length > 0) {
+                  graphActions.removeEdges(selectedEdges.map((e) => e.id));
+                }
+              }
+              e.stopPropagation();
+              e.preventDefault();
+            }
+          }}
+        >
           <div className={clsx(['react-flow'])} ref={reactFlowWrapper}>
             <ReactFlow
+              deleteKeyCode={null}
               elevateEdgesOnSelect={false}
               elevateNodesOnSelect={true}
               zoomOnDoubleClick={false}
+              connectionRadius={35}
               nodes={nodesState[0]}
               edges={edgesState[0]}
               onInit={(instance) => {
@@ -360,6 +434,8 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
               }}
               snapToGrid={true}
               snapGrid={[5, 5]}
+              minZoom={0.25}
+              selectionMode={SelectionMode.Partial}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               onDrop={onDrop}
@@ -377,60 +453,6 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
                   graphActions.closeTab(node?.id);
                 });
               }}
-              onKeyDown={(e) => {
-                const [nodes] = nodesState;
-                const [edges] = edgesState;
-
-                if (e.key === 'c' && e.metaKey) {
-                  const selectedNodeIds = nodesState[0].filter((n) => n.selected).map(({ id }) => id);
-                  if (selectedNodeIds.length === 0) {
-                    return;
-                  }
-
-                  graphActions.copyNodes(selectedNodeIds);
-                  e.preventDefault();
-                } else if (e.key === 'd' && e.metaKey) {
-                  if (!disabled) {
-                    const selectedNodeIds = nodes.filter((n) => n.selected).map(({ id }) => id);
-                    if (selectedNodeIds.length === 0) {
-                      return;
-                    }
-
-                    graphActions.duplicateNodes(selectedNodeIds);
-                  }
-                  e.preventDefault();
-                } else if (e.key === 'Backspace') {
-                  if (!disabled) {
-                    const selectedNodes = nodes.filter((n) => n.selected);
-                    const selectedEdges = edges.filter((e) => e.selected);
-
-                    if (selectedNodes.length > 0) {
-                      const length = selectedNodes.length;
-                      const text = length > 1 ? 'nodes' : 'node';
-                      Modal.confirm({
-                        icon: null,
-                        title: `Delete ${text}`,
-                        content: (
-                          <Typography.Text>
-                            Are you sure you want to delete {length > 1 ? `${length} ${text}` : text}?
-                          </Typography.Text>
-                        ),
-                        okButtonProps: { danger: true },
-                        onOk: () => {
-                          if (selectedEdges.length > 0) {
-                            graphActions.removeEdges(selectedEdges.map((e) => e.id));
-                          }
-                          graphActions.removeNodes(selectedNodes.map((n) => n.id));
-                        },
-                      });
-                    } else if (selectedEdges.length > 0) {
-                      graphActions.removeEdges(selectedEdges.map((e) => e.id));
-                    }
-                  }
-                  e.stopPropagation();
-                  e.preventDefault();
-                }
-              }}
               onEdgeMouseEnter={(_, edge) => graphActions.setHoveredEdgeId(edge.id)}
               onEdgeMouseLeave={() => graphActions.setHoveredEdgeId(null)}
             >
@@ -443,6 +465,31 @@ export const Graph = forwardRef<GraphRef, GraphProps>(({ reactFlowProOptions, cl
             </ReactFlow>
           </div>
         </div>
+        {!disabled && componentsOpened && (
+          <div className={'grl-dg__aside__menu'}>
+            <>
+              <div className={'grl-dg__aside__menu__heading'}>
+                <div className={'grl-dg__aside__menu__heading__text'}>
+                  <Typography.Text strong style={{ marginBottom: 0 }}>
+                    Components
+                  </Typography.Text>{' '}
+                  <Typography.Text type='secondary' style={{ fontSize: 10, marginLeft: 5 }}>
+                    (Drag-and-drop)
+                  </Typography.Text>
+                </div>
+                <Button
+                  type={'text'}
+                  size='small'
+                  icon={<CloseOutlined style={{ fontSize: 12 }} />}
+                  onClick={() => setComponentsOpened(false)}
+                />
+              </div>
+              <div className={'grl-dg__aside__menu__content'}>
+                <GraphComponents inputDisabled={hasInputNode} disabled={disabled} />
+              </div>
+            </>
+          </div>
+        )}
       </div>
     </div>
   );

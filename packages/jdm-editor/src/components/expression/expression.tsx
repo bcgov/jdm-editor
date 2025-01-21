@@ -1,9 +1,11 @@
+import { createVariableType } from '@gorules/zen-engine-wasm';
 import type { DragDropManager } from 'dnd-core';
 import equal from 'fast-deep-equal/es6/react';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { DndProvider } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
 
+import { isWasmAvailable } from '../../helpers/wasm';
 import type { SimulationTraceDataExpression } from '../decision-graph';
 import { ExpressionStoreProvider, useExpressionStoreRaw } from './context/expression-store.context';
 import type { ExpressionControllerProps } from './expression-controller';
@@ -14,9 +16,10 @@ import './expression.scss';
 export type ExpressionProps = {
   manager?: DragDropManager;
   traceData?: SimulationTraceDataExpression;
+  inputData?: unknown;
 } & ExpressionControllerProps;
 
-export const Expression: React.FC<ExpressionProps> = ({ manager, traceData, ...props }) => {
+export const Expression: React.FC<ExpressionProps> = ({ manager, traceData, inputData, ...props }) => {
   const [_, setMounted] = useState(false);
   const container = useRef<HTMLDivElement>(null);
 
@@ -46,7 +49,7 @@ export const Expression: React.FC<ExpressionProps> = ({ manager, traceData, ...p
           <ExpressionStoreProvider>
             <ExpressionController {...props} />
             <ExpressionList />
-            <SimulateDataSync traceData={traceData} />
+            <SimulateDataSync traceData={traceData} inputData={inputData} />
           </ExpressionStoreProvider>
         </DndProvider>
       )}
@@ -54,7 +57,7 @@ export const Expression: React.FC<ExpressionProps> = ({ manager, traceData, ...p
   );
 };
 
-const SimulateDataSync: React.FC<Pick<ExpressionProps, 'traceData'>> = ({ traceData }) => {
+const SimulateDataSync: React.FC<Pick<ExpressionProps, 'traceData' | 'inputData'>> = ({ traceData, inputData }) => {
   const expressionStoreRaw = useExpressionStoreRaw();
 
   useEffect(() => {
@@ -66,6 +69,14 @@ const SimulateDataSync: React.FC<Pick<ExpressionProps, 'traceData'>> = ({ traceD
 
     expressionStoreRaw.setState({ traceData });
   }, [traceData]);
+
+  useEffect(() => {
+    if (!isWasmAvailable()) {
+      return;
+    }
+
+    expressionStoreRaw.setState({ inputVariableType: createVariableType(inputData) });
+  }, [inputData]);
 
   return null;
 };

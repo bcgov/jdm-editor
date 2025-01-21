@@ -15,13 +15,16 @@ import './dt.scss';
 import { Table } from './table/table';
 
 export type DecisionTableProps = {
+  id?: string;
   tableHeight: string | number;
   mountDialogsOnBody?: boolean;
   manager?: DragDropManager;
+  inputData?: unknown;
 } & DecisionTableContextProps &
   DecisionTableEmptyType;
 
 export const DecisionTable: React.FC<DecisionTableProps> = ({
+  id,
   tableHeight,
   mountDialogsOnBody = false,
   manager,
@@ -58,9 +61,9 @@ export const DecisionTable: React.FC<DecisionTableProps> = ({
       {ref.current && (
         <DndProvider {...dndProps}>
           <DecisionTableProvider>
-            <DecisionTableDialogProvider getContainer={mountDialogsOnBody === true ? undefined : getContainer}>
+            <DecisionTableDialogProvider getContainer={mountDialogsOnBody ? undefined : getContainer}>
               <DecisionTableCommandBar />
-              <Table maxHeight={tableHeight} />
+              <Table id={id} maxHeight={tableHeight} />
               <DecisionTableDialogs />
               <DecisionTableEmpty {...props} />
             </DecisionTableDialogProvider>

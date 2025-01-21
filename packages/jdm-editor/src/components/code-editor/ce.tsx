@@ -1,13 +1,22 @@
 import { bracketMatching } from '@codemirror/language';
 import { Compartment, EditorState, type Extension, Text } from '@codemirror/state';
 import { EditorView, placeholder as placeholderExt } from '@codemirror/view';
+import { createVariableType } from '@gorules/zen-engine-wasm';
 import { theme } from 'antd';
 import clsx from 'clsx';
 import React, { useEffect, useMemo, useRef } from 'react';
+import { match } from 'ts-pattern';
 
 import { composeRefs } from '../../helpers/compose-refs';
 import { useDecisionGraphState } from '../decision-graph';
+import { isWasmAvailable } from '../../helpers/wasm';
 import './ce.scss';
+import {
+  updateExpectedVariableTypeEffect,
+  updateExpressionTypeEffect,
+  updateStrictModeEffect,
+  updateVariableTypeEffect,
+} from './extensions/types';
 import { zenExtensions, zenHighlightDark, zenHighlightLight } from './extensions/zen';
 
 const updateListener = (onChange?: (data: string) => void, onStateChange?: (state: EditorState) => void) =>
@@ -34,9 +43,13 @@ export type CodeEditorProps = {
   placeholder?: string;
   disabled?: boolean;
   type?: 'unary' | 'standard' | 'template';
+  lint?: boolean;
+  strict?: boolean;
   fullHeight?: boolean;
   noStyle?: boolean;
   extension?: (params: ExtensionParams) => Extension;
+  variableType?: any;
+  expectedVariableType?: any;
 } & Omit<React.HTMLAttributes<HTMLDivElement>, 'disabled' | 'onChange'>;
 
 export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
@@ -44,6 +57,7 @@ export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
     {
       noStyle = false,
       fullHeight = false,
+      strict = false,
       maxRows,
       disabled,
       value,
@@ -53,6 +67,9 @@ export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
       onStateChange,
       type = 'standard',
       extension,
+      variableType,
+      expectedVariableType,
+      lint = true,
       ...props
     },
     ref,
@@ -90,7 +107,7 @@ export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
           extensions: [
             EditorView.lineWrapping,
             bracketMatching(),
-            compartment.zenExtension.of(zenExtensions({ type, schema })),
+            compartment.zenExtension.of(zenExtensions({ type, lint, schema })),
             compartment.updateListener.of(updateListener(onChange, onStateChange)),
             compartment.theme.of(editorTheme(token.mode === 'dark')),
             compartment.placeholder.of(placeholder ? placeholderExt(placeholder) : []),
@@ -173,9 +190,16 @@ export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
       }
 
       codeMirror.current.dispatch({
-        effects: compartment.zenExtension.reconfigure(zenExtensions({ type, schema })),
+        effects: [
+          compartment.zenExtension.reconfigure(zenExtensions({ type, lint, schema })),
+          updateExpressionTypeEffect.of(
+            match(type)
+              .with('unary', () => 'unary' as const)
+              .otherwise(() => 'standard' as const),
+          ),
+        ],
       });
-    }, [type, schema]);
+    }, [type, lint, schema]);
 
     useEffect(() => {
       if (!codeMirror.current) {
@@ -186,6 +210,50 @@ export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
         effects: compartment.userProvided.reconfigure(extension?.({ type }) ?? []),
       });
     }, [extension, type]);
+
+    useEffect(() => {
+      if (!codeMirror.current || !isWasmAvailable()) {
+        return;
+      }
+
+      if (variableType === null || variableType === undefined) {
+        codeMirror.current.dispatch({
+          effects: updateVariableTypeEffect.of(null),
+        });
+        return;
+      }
+
+      codeMirror.current.dispatch({
+        effects: updateVariableTypeEffect.of(createVariableType(variableType)),
+      });
+    }, [variableType]);
+
+    useEffect(() => {
+      if (!codeMirror.current || !isWasmAvailable()) {
+        return;
+      }
+
+      if (expectedVariableType === null || expectedVariableType === undefined) {
+        codeMirror.current.dispatch({
+          effects: updateExpectedVariableTypeEffect.of(null),
+        });
+        return;
+      }
+
+      codeMirror.current.dispatch({
+        effects: updateExpectedVariableTypeEffect.of(createVariableType(expectedVariableType)),
+      });
+    }, [expectedVariableType]);
+
+    useEffect(() => {
+      if (!codeMirror.current) {
+        return;
+      }
+
+      codeMirror.current.dispatch({
+        effects: updateStrictModeEffect.of(strict),
+      });
+    }, [strict]);
 
     return (
       <div
@@ -198,6 +266,7 @@ export const CodeEditor = React.forwardRef<HTMLDivElement, CodeEditorProps>(
           className,
         )}
         style={{ '--editorMaxRows': maxRows } as any}
+        data-type={type}
         {...props}
       />
     );

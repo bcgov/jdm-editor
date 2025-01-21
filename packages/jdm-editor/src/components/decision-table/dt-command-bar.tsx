@@ -1,9 +1,17 @@
-import { ExportOutlined, ImportOutlined } from '@ant-design/icons';
-import { Button, Select, message } from 'antd';
+import {
+  ArrowDownOutlined,
+  ArrowUpOutlined,
+  CloseOutlined,
+  DeleteOutlined,
+  ExportOutlined,
+  ImportOutlined,
+} from '@ant-design/icons';
+import { Button, Divider, Popconfirm, Tooltip, message } from 'antd';
 import React, { useRef } from 'react';
 
 import { exportExcelFile, readFromExcel } from '../../helpers/excel-file-utils';
 import type { DecisionNode } from '../decision-graph';
+import { DiffSelect } from '../shared';
 import { Stack } from '../stack';
 import {
   type HitPolicy,
@@ -15,12 +23,14 @@ import {
 
 export const DecisionTableCommandBar: React.FC = () => {
   const tableActions = useDecisionTableActions();
-  const { disableHitPolicy, disabled, configurable, hitPolicy } = useDecisionTableState(
-    ({ disableHitPolicy, disabled, configurable, decisionTable }) => ({
+  const { disableHitPolicy, disabled, configurable, hitPolicy, diffHitPolicy, cursor } = useDecisionTableState(
+    ({ disableHitPolicy, disabled, configurable, decisionTable, cursor }) => ({
       disableHitPolicy,
       disabled,
       configurable,
+      cursor,
       hitPolicy: decisionTable.hitPolicy,
+      diffHitPolicy: decisionTable?._diff?.fields?.hitPolicy,
     }),
   );
 
@@ -89,9 +99,53 @@ export const DecisionTableCommandBar: React.FC = () => {
           >
             Import Excel
           </Button>
+          {cursor && !disabled && (
+            <>
+              <Divider
+                type={'vertical'}
+                style={{
+                  height: 24,
+                }}
+              />
+              <Tooltip title={'Add row below'}>
+                <Button
+                  type='text'
+                  size={'small'}
+                  color='secondary'
+                  icon={<ArrowDownOutlined />}
+                  onClick={() => tableActions.addRowBelow(cursor?.y)}
+                />
+              </Tooltip>
+              <Tooltip title={'Add row above'}>
+                <Button
+                  type='text'
+                  size={'small'}
+                  color='secondary'
+                  icon={<ArrowUpOutlined />}
+                  onClick={() => tableActions.addRowAbove(cursor?.y)}
+                />
+              </Tooltip>
+              <Tooltip>
+                <Popconfirm title='Remove row?' okText='Remove' onConfirm={() => tableActions.removeRow(cursor?.y)}>
+                  <Button type='text' size={'small'} icon={<DeleteOutlined />} />
+                </Popconfirm>
+              </Tooltip>
+              <Button
+                type='text'
+                size={'small'}
+                color='secondary'
+                icon={<CloseOutlined />}
+                onClick={() => tableActions.setCursor(null)}
+              >
+                Deselect
+              </Button>
+            </>
+          )}
         </Stack>
-        <Select
+        <DiffSelect
+          displayDiff={diffHitPolicy?.status === 'modified'}
           style={{ width: 140 }}
+          previousValue={diffHitPolicy?.previousValue}
           size={'small'}
           disabled={disabled || !configurable || disableHitPolicy}
           value={hitPolicy}

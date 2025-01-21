@@ -1,6 +1,6 @@
 {
   "name": "@gorules/lezer-zen",
-  "version": "0.4.0",
+  "version": "0.5.1",
   "description": "lezer-based ZEN grammar",
   "main": "dist/index.cjs",
   "type": "module",
@@ -17,10 +17,10 @@
   ],
   "license": "MIT",
   "devDependencies": {
-    "@lezer/generator": "^1.7.0",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "mocha": "^10.4.0",
-    "rollup": "^4.14.3"
+    "@lezer/generator": "^1.7.1",
+    "@rollup/plugin-node-resolve": "^15.3.0",
+    "mocha": "^10.7.3",
+    "rollup": "^4.24.0"
   },
   "repository": {
     "type": "git",
@@ -33,8 +33,8 @@
     "prepublishOnly": "pnpm run build"
   },
   "dependencies": {
-    "@lezer/common": "^1.2.1",
-    "@lezer/highlight": "^1.2.0",
-    "@lezer/lr": "^1.4.0"
+    "@lezer/common": "^1.2.2",
+    "@lezer/highlight": "^1.2.1",
+    "@lezer/lr": "^1.4.2"
   }
 }
