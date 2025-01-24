@@ -44,11 +44,23 @@ export const GraphComponents: React.FC<GraphComponentsProps> = React.memo(({ inp
   }, []);
 
   const innerGroups = useMemo<Record<string, NodeSpecification[]>>(() => {
+    const baseNodeSpecification = { ...nodeSpecification };
+    // override base types with extended properties if they exist
+    const extendedComponents = customComponents.filter((component) => {
+      const isRecognizedType = Object.values(NodeKind).includes(component.type as NodeKind);
+      if (isRecognizedType) {
+        baseNodeSpecification[component.type as NodeKind] = {
+          ...nodeSpecification[component.type as NodeKind] as NodeSpecification,
+          ...component,
+        };
+      }
+      return !isRecognizedType;
+    });
     const initialGroups: Record<string, NodeSpecification[]> = {
-      core: Object.values(nodeSpecification),
+      core: Object.values(baseNodeSpecification),
     };
     if (customComponents?.length > 0) {
-      initialGroups.extended = customComponents;
+      initialGroups.extended = extendedComponents;
     }
 
     (customNodes || []).forEach((node) => {
