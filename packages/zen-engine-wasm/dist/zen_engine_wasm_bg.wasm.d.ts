@@ -1,0 +1,32 @@
+/* tslint:disable */
+/* eslint-disable */
+export const memory: WebAssembly.Memory;
+export function evaluateExpression(a: number, b: number, c: number, d: number): void;
+export function evaluateUnaryExpression(a: number, b: number, c: number, d: number): void;
+export function renderTemplate(a: number, b: number, c: number, d: number): void;
+export function validateUnaryExpression(a: number, b: number): number;
+export function validateExpression(a: number, b: number): number;
+export function __wbg_variabletype_free(a: number, b: number): void;
+export function variabletype_new(a: number): number;
+export function variabletype_fromJson(a: number): number;
+export function variabletype_fromIncoming(a: number, b: number): number;
+export function variabletype_toJson(a: number): number;
+export function variabletype_clone(a: number): number;
+export function variabletype_toArray(a: number): number;
+export function variabletype_arrayItem(a: number): number;
+export function variabletype_calculateType(a: number, b: number, c: number): number;
+export function variabletype_merge(a: number, b: number): number;
+export function variabletype_set(a: number, b: number, c: number, d: number): void;
+export function variabletype_setJson(a: number, b: number, c: number, d: number): void;
+export function variabletype_get(a: number, b: number, c: number): number;
+export function variabletype_equal(a: number, b: number): number;
+export function variabletype_satisfies(a: number, b: number): number;
+export function variabletype_hash(a: number, b: number): void;
+export function variabletype_typeCheck(a: number, b: number, c: number): number;
+export function variabletype_typeCheckUnary(a: number, b: number, c: number): number;
+export function isReady(): number;
+export function __wbindgen_export_0(a: number, b: number): number;
+export function __wbindgen_export_1(a: number, b: number, c: number, d: number): number;
+export function __wbindgen_add_to_stack_pointer(a: number): number;
+export function __wbindgen_export_2(a: number, b: number, c: number): void;
+export function __wbindgen_export_3(a: number): void;
