@@ -6,6 +6,7 @@ import {
   closeBrackets,
   closeBracketsKeymap,
 } from '@codemirror/autocomplete';
+import { history, historyKeymap, insertNewlineAndIndent } from '@codemirror/commands';
 import { HighlightStyle, LRLanguage, LanguageSupport, syntaxHighlighting, syntaxTree } from '@codemirror/language';
 import type { EditorView } from '@codemirror/view';
 import { hoverTooltip, keymap } from '@codemirror/view';
@@ -16,11 +17,14 @@ import { tags as t } from '@lezer/highlight';
 import { match } from 'ts-pattern';
 
 import baseCompletion from '../../../completion.json';
+import { renderDiagnosticMessage } from './diagnostic';
+import { zenLinter } from './linter';
+import { buildTypeCompletion, typeField, zenKindToString } from './types';
 import { SchemaSelectProps } from '../../../helpers/components';
 
 let completion = baseCompletion;
 
-const applyCompletion = (view: EditorView, completion: Completion, from: number, to: number) => {
+export const applyCompletion = (view: EditorView, completion: Completion, from: number, to: number) => {
   const transaction = match(completion.type)
     .with('function', () => {
       const insert = `${completion.label}()`;
@@ -33,6 +37,7 @@ const applyCompletion = (view: EditorView, completion: Completion, from: number,
     .otherwise(() =>
       view.state.update({
         changes: { from: from, to: to, insert: completion.label },
+        selection: { anchor: from + completion.label.length },
       }),
     );
 
@@ -54,25 +59,96 @@ const makeExpressionCompletion =
     const tree = syntaxTree(context.state);
 
     const word = context.state.wordAt(context.pos);
-    if (!context.explicit && (!word || word.empty)) {
+    const node = tree.resolveInner(context.pos, -1);
+    if (
+      !hasAutoComplete(node) ||
+      (!context.explicit && context.pos === 0) ||
+      (!context.explicit && !word && node.name !== '.')
+    ) {
       return null;
     }
 
-    const node = tree.resolve(context.pos);
-    if (node.name === 'String' || !hasAutoComplete(node)) {
-      return null;
+    const extendedCompletion = completion.map((c) =>
+      ({
+        ...c,
+        detail: c.detail.replaceAll('`', ''),
+        apply: applyCompletion,
+      }) satisfies Completion,
+    );
+
+    const from = word?.from ?? context.pos;
+    switch (node.name) {
+      case 'Standard':
+      case 'VariableName': {
+        const tField = context.state.field(typeField);
+
+        return {
+          from,
+          options: [...buildTypeCompletion({ type: 'variable', kind: tField.rootKind }), ...extendedCompletion],
+          validFor: /\w*/,
+        };
+      }
+      case 'String': {
+        const tField = context.state.field(typeField);
+        const tBase = autoCompleteSpan(node);
+        const targetType = (tField.types ?? []).find((t) => t.span[0] === tBase?.[0] && t.span[1] === tBase[1]);
+        if (!targetType) {
+          return null;
+        }
+
+        return {
+          from: node.from + 1,
+          options: buildTypeCompletion({ kind: targetType.kind }),
+          validFor: /\w*/,
+        };
+      }
+      case '.':
+      case 'PropertyName': {
+        const tField = context.state.field(typeField);
+        const tBase = autoCompleteSpan(node);
+        const targetType = (tField.types ?? []).find((t) => t.span[0] === tBase?.[0] && t.span[1] === tBase[1]);
+        if (!targetType) {
+          return null;
+        }
+
+        return {
+          from,
+          options: buildTypeCompletion({ kind: targetType.kind }),
+          validFor: /\w*/,
+        };
+      }
+      default:
+        return null;
     }
-
-    const extendedCompletion = completion.map((c) => ({
-      ...c,
-      apply: applyCompletion,
-    }));
-
-    return {
-      from: word?.from ?? 0,
-      options: extendedCompletion,
-    };
   };
+
+const autoCompleteSpan = (node: SyntaxNode): [number, number] | null => {
+  let lastNode = node;
+  if (['PropertyExpression', 'PropertyAccess'].includes(lastNode.parent?.name ?? '') && lastNode.parent?.prevSibling) {
+    lastNode = lastNode.parent.prevSibling;
+  }
+
+  let firstNode = lastNode;
+  while (firstNode.prevSibling) {
+    firstNode = firstNode.prevSibling;
+  }
+
+  return [firstNode.from, lastNode.to];
+};
+
+const hoverSpan = (node: SyntaxNode): [number, number] | null => {
+  let lastNode = node;
+  if (lastNode.parent && ['PropertyExpression', 'PropertyAccess'].includes(lastNode.parent.name)) {
+    lastNode = lastNode.parent;
+  }
+
+  let firstNode = lastNode;
+  while (firstNode.prevSibling) {
+    firstNode = firstNode.prevSibling;
+  }
+
+  return [firstNode.from, lastNode.to];
+};
 
 export const completionExtension = (schema: SchemaSelectProps[] = []) => {
   const schemaCompletion = schema.map(({field, name}) => ({
@@ -105,7 +181,36 @@ export const hoverExtension = () =>
           const dom = document.createElement('div');
           dom.classList.add('grl-ce-hover-tooltip');
           dom.style.whiteSpace = 'pre';
-          dom.textContent = `${details.label}: ${details.detail}\n\n${details.info}`;
+          dom.innerHTML = renderDiagnosticMessage({
+            text: `<span style="font-size: 12px">${details.info}</span>\n${details.label}: ${details.detail}\n`,
+            className: 'cm-hoverTooltipMessageToken',
+          });
+          return { dom };
+        },
+      };
+    }
+
+    const tree = syntaxTree(view.state);
+    const node = tree.resolveInner(pos, -1);
+
+    const tField = view.state.field(typeField);
+    const tBase = hoverSpan(node);
+    const targetType = (tField.types ?? []).find((t) => t.span[0] === tBase?.[0] && t.span[1] === tBase[1]);
+    if (targetType && tBase) {
+      const source = view.state.doc.toString();
+
+      return {
+        pos: tBase[0],
+        end: tBase[1],
+        above: true,
+        create() {
+          const dom = document.createElement('div');
+          dom.classList.add('grl-ce-hover-tooltip');
+          dom.style.whiteSpace = 'pre';
+          dom.innerHTML = renderDiagnosticMessage({
+            text: `${source.slice(tBase[0], tBase[1])}: \`${zenKindToString(targetType.kind)}\``,
+            className: 'cm-hoverTooltipMessageToken',
+          });
           return { dom };
         },
       };
@@ -139,7 +244,7 @@ const zenLanguage = new LanguageSupport(
     parser: zenParser,
     name: 'zen',
     languageData: {
-      closeBrackets: { brackets: ['(', '[', "'", '"', '`'] },
+      closeBrackets: { brackets: ['(', '[', '{', "'", '"', '`'] },
       wordChars: '$',
     },
   }),
@@ -166,13 +271,22 @@ const zenTemplateLanguage = new LanguageSupport(
 
 type extensionOptions = {
   type: 'unary' | 'standard' | 'template';
-  schema: SchemaSelectProps[]
+  lint?: boolean;
+  schema: SchemaSelectProps[];
 };
 
-export const zenExtensions = ({ type, schema }: extensionOptions) => [
-  type !== 'template' ? zenLanguage : zenTemplateLanguage,
-  completionExtension(schema),
-  hoverExtension(),
-  closeBrackets(),
-  keymap.of(closeBracketsKeymap),
-];
+export const zenExtensions = ({ type, lint = true, schema }: extensionOptions) =>
+  [
+    type !== 'template' ? zenLanguage : zenTemplateLanguage,
+    completionExtension(schema),
+    hoverExtension(),
+    closeBrackets(),
+    lint && zenLinter(type),
+    typeField,
+    history(),
+    keymap.of([
+      ...closeBracketsKeymap,
+      ...historyKeymap,
+      { key: 'Enter', run: insertNewlineAndIndent, shift: insertNewlineAndIndent },
+    ]),
+  ].filter((ext) => !!ext);

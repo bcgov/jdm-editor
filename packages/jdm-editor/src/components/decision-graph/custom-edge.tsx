@@ -4,16 +4,19 @@ import clsx from 'clsx';
 import React from 'react';
 import type { EdgeProps } from 'reactflow';
 import { BaseEdge, EdgeLabelRenderer, getBezierPath } from 'reactflow';
+import { match } from 'ts-pattern';
 
-import { useDecisionGraphActions, useDecisionGraphState } from './context/dg-store.context';
+import { useDecisionGraphActions, useDecisionGraphState, useEdgeDiff } from './context/dg-store.context';
 
 export const CustomEdge: React.FC<EdgeProps> = (props) => {
   const graphActions = useDecisionGraphActions();
   const { id, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, style = {}, markerEnd } = props;
-  const { hoveredEdgeId, disabled } = useDecisionGraphState(({ hoveredEdgeId, disabled }) => ({
-    hoveredEdgeId,
+  const { isHovered, disabled } = useDecisionGraphState(({ hoveredEdgeId, disabled }) => ({
+    isHovered: hoveredEdgeId === id,
     disabled,
   }));
+
+  const { diff } = useEdgeDiff(id);
 
   const [edgePath, labelX, labelY] = getBezierPath({
     sourceX,
@@ -26,7 +29,17 @@ export const CustomEdge: React.FC<EdgeProps> = (props) => {
 
   return (
     <>
-      <BaseEdge path={edgePath} markerEnd={markerEnd} style={style} />
+      <BaseEdge
+        path={edgePath}
+        markerEnd={markerEnd}
+        style={{
+          ...(style || {}),
+          stroke: match(diff)
+            .with({ status: 'added' }, () => 'var(--grl-color-success)')
+            .with({ status: 'removed' }, () => 'var(--grl-color-error)')
+            .otherwise(() => undefined),
+        }}
+      />
       <EdgeLabelRenderer>
         <div
           className={'nodrag nopan edge-renderer'}
@@ -41,7 +54,7 @@ export const CustomEdge: React.FC<EdgeProps> = (props) => {
               icon={<DeleteOutlined />}
               danger
               className={clsx('grl-edge-delete-button')}
-              data-visible={id === hoveredEdgeId}
+              data-visible={isHovered}
               onClick={() => graphActions.removeEdges([id])}
             />
           )}

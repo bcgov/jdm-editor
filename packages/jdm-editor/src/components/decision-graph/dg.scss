@@ -1,9 +1,33 @@
 .grl-dg {
+  font-family: var(--grl-font-family);
   height: 100%;
   display: grid;
   grid-template-areas: 'sidebar graph component' 'bottom bottom component';
   grid-template-columns: min-content 1fr min-content;
   grid-template-rows: 1fr auto;
+
+  --node-color-blue: var(--grl-color-primary);
+  --node-color-purple: #7c4dff;
+  --node-color-orange: #f76d40;
+  --node-color-green: #10ac84;
+
+  * {
+    box-sizing: border-box;
+  }
+
+  .react-flow__handle {
+    cursor: crosshair !important;
+    transition: 0.2s all;
+    transform-origin: 50% calc(50% + 3.5px);
+    opacity: 0.75;
+
+    &-connecting,
+    &:hover {
+      transform: scale(2);
+      background-color: var(--grl-color-primary-bg-hover);
+      opacity: 1;
+    }
+  }
 
   .nodrag {
     cursor: initial;
@@ -20,9 +44,18 @@
 
   &__simulator {
     width: 100%;
-    display: flex;
     height: 100%;
     background: var(--grl-color-primary-bg-fade);
+
+    &__search {
+      height: 100%;
+      width: 100%;
+      padding-left: 12px;
+      border: none;
+      background: transparent;
+      outline: none !important;
+      font-size: 13px;
+    }
 
     &__nodes-list {
       display: flex;
@@ -33,15 +66,25 @@
       height: 100%;
 
       &__node {
-        padding: 4px 8px;
+        padding: 5px 8px;
         border-radius: 6px;
         display: flex;
         flex-direction: row;
         justify-content: space-between;
         align-items: center;
+        gap: 16px;
+        user-select: none;
 
         & > span {
           font-size: 13px;
+        }
+
+        [data-role='name'] {
+          white-space: nowrap;
+        }
+
+        [data-role='performance'] {
+          flex-shrink: 0;
         }
 
         &:hover {
@@ -52,6 +95,12 @@
         &.active {
           background-color: rgba(0, 0, 0, 0.1);
         }
+      }
+    }
+
+    &__segmentButton {
+      &[data-active='true'] {
+        background-color: rgba(0, 0, 0, 0.1);
       }
     }
 
@@ -81,6 +130,7 @@
         justify-content: flex-start;
         align-items: center;
         height: 36px;
+        user-select: none;
 
         &__actions {
           display: flex;
@@ -94,10 +144,12 @@
 
         &--nodes {
           justify-content: space-between;
+          padding-left: 0;
         }
 
         &--response {
           justify-content: space-between;
+          padding-left: 0;
         }
       }
 
@@ -126,7 +178,7 @@
     position: relative;
     width: 100%;
     border-top: 1px solid var(--grl-color-border);
-    height: 340px;
+    height: 100%;
     background: var(--grl-color-primary-bg-fade);
     display: flex;
     flex-direction: column;
@@ -165,7 +217,7 @@
     justify-content: flex-start;
     gap: 0.5rem;
     width: 100%;
-    padding: 0.5rem;
+    padding: 7px;
     border-bottom: 1px solid var(--grl-color-border);
   }
 
@@ -174,43 +226,61 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    background: white;
 
-    .tabs {
+    .grl-graph-tabs {
       max-width: 100%;
-      background-color: var(--grl-color-bg-elevated);
       box-sizing: content-box;
+      border-bottom: 1px solid var(--grl-color-border);
+      background: var(--grl-color-bg-container);
 
-      .ant-tabs-nav {
-        margin: 0 !important;
+      [role='tablist'] {
+        margin: 0;
+      }
 
-        &::before {
-          border-bottom: 1px solid var(--grl-color-border);
+      [data-node-key] {
+        padding: 0;
+        margin: 0;
+      }
+
+      $tabs: &;
+
+      &__tab {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 9px 12px;
+        transition: 0.1s ease;
+        text-shadow: none;
+
+        &[data-active='false'] {
+          opacity: 0.75;
+        }
+
+        &:hover {
+          opacity: 1;
+        }
+
+        &[data-active='true'],
+        &:hover {
+          .grl-graph-tabs__closeIcon {
+            opacity: 1 !important;
+          }
         }
       }
 
-      .ant-tabs-tab {
-        position: relative;
-        margin: 0 !important;
-        border-radius: 0 !important;
-        border: 0 !important;
-        background: transparent !important;
-        padding: 12px 12px !important;
+      &__closeIcon {
+        transition: 0.1s ease;
+        opacity: 0;
 
-        .anticon {
-          margin: 0;
+        > span {
+          line-height: 0 !important;
         }
+      }
 
-        &::after {
-          transition: var(--grl-transition-quick);
-          opacity: 0;
-          display: block;
-          position: absolute;
-          content: '';
-          inset: auto 0 0;
-          height: 4px;
-          background: var(--grl-color-primary);
-          z-index: 99;
-          border-radius: 3px;
+      .ant-tabs-nav {
+        &::before {
+          border-bottom: none;
         }
       }
 
@@ -249,6 +319,7 @@
       flex-direction: row;
       height: 100%;
       width: 100%;
+      outline: 0 !important;
     }
 
     .react-flow {
@@ -354,16 +425,16 @@
     &__menu {
       background-color: var(--grl-color-bg-container);
       width: 260px;
-      min-width: 220px;
+      min-width: 260px;
       height: 100%;
-      border-right: 1px solid var(--grl-color-border);
+      border-left: 1px solid var(--grl-color-border);
       display: flex;
       flex-direction: column;
 
       &__heading {
-        padding: 0 0.5rem 0 1rem;
-        height: 46px;
+        padding: 6px 12px;
         border-bottom: 1px solid var(--grl-color-border);
+        background: var(--grl-color-primary-bg-fade);
         box-sizing: border-box;
         display: flex;
         flex-direction: row;
@@ -373,6 +444,7 @@
           flex: 1;
           display: flex;
           align-items: center;
+          font-size: 12px;
         }
       }
 
@@ -385,27 +457,18 @@
         flex-grow: 1;
         display: flex;
         flex-direction: column;
-        gap: 16px;
-        padding: 1rem;
 
         &__search {
           border-left: none;
           border-top: none;
           border-right: none;
           border-radius: 0;
-          height: 39px;
+          height: auto;
           box-shadow: none;
           position: sticky;
           top: 0;
           z-index: 1;
-        }
-
-        .divider {
-          grid-column: 1 / -1;
-          height: 1px;
-          background-color: var(--grl-color-border);
-          margin-top: 0.25rem;
-          margin-bottom: 0.25rem;
+          font-size: 13px;
         }
 
         .draggable-component {
@@ -417,7 +480,7 @@
             user-select: none;
 
             .grl-dn {
-              background-color: var(--grl-color-bg-container-disabled);
+              color: var(--grl-color-bg-container-disabled);
             }
 
             .grl-dn__header__icon {
@@ -464,8 +527,8 @@
     &__handle {
       border: 1px solid var(--grl-color-primary-border);
       background-color: var(--grl-color-primary-bg);
-      height: 9px;
-      width: 9px;
+      height: 7px;
+      width: 7px;
       border-radius: 50% !important;
 
       &::after {
@@ -481,7 +544,7 @@
     }
 
     &__handle-left {
-      left: -5px !important;
+      left: -3px !important;
 
       &::after {
         transform: translate(-80%, -50%);
@@ -491,7 +554,7 @@
     }
 
     &__handle-right {
-      right: -5px !important;
+      right: -3px !important;
 
       &::after {
         transform: translate(-20%, -50%);
@@ -531,6 +594,8 @@
     color: var(--grl-color-text);
     border-color: var(--grl-color-border);
     transition: var(--grl-transition);
+    height: 24px;
+    width: 24px;
 
     &:hover {
       background: var(--grl-color-primary-hover);
@@ -576,10 +641,11 @@
 }
 
 .grl-graph-node {
+  visibility: visible !important;
+
   &__handle-left {
     z-index: 20;
-    // TODO: fix size
-    top: 30px;
+    top: 20px;
 
     &.compact {
       top: 20px;
@@ -588,7 +654,7 @@
 
   &__handle-right {
     z-index: 20;
-    top: 30px;
+    top: 20px;
 
     &.compact {
       top: 20px;
@@ -597,7 +663,7 @@
 }
 
 .switch {
-  width: 240px;
+  width: 220px;
   height: auto;
   padding: 0;
   border-radius: 4px;
@@ -616,7 +682,7 @@
     .react-flow__handle {
       z-index: 20;
       top: calc(50% - 1px);
-      right: -16px;
+      right: -4px !important;
     }
 
     &__title {
@@ -667,6 +733,18 @@
         border-bottom: 1px solid var(--grl-color-border);
       }
 
+      &.diff-added {
+        background-color: var(--grl-color-success-bg);
+      }
+
+      &.diff-modified {
+        background-color: var(--grl-color-warning-bg);
+      }
+
+      &.diff-removed {
+        background-color: var(--grl-color-error-bg);
+      }
+
       &.active {
         background-color: var(--grl-color-success-bg);
       }
@@ -679,7 +757,7 @@
         position: relative;
         display: flex;
         flex-direction: row;
-        padding: 7px var(--node-horizontal-padding);
+        padding: 4px var(--node-horizontal-padding);
 
         &__action {
           font-size: 12px;
@@ -741,4 +819,42 @@
 .single-line * {
   display: inline;
   white-space: nowrap;
+}
+
+.grl-node-content {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.grl-node-content-main {
+  flex: 1;
+}
+
+.grl-node-content-side {
+  height: 100%;
+  width: 100%;
+  //border-left: 1px solid var(--grl-color-border);
+
+  &__panel {
+    background: var(--grl-color-bg-elevated);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    background: var(--grl-color-primary-bg-fade);
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--grl-color-border);
+  }
+
+  &__body {
+    overflow-y: auto;
+    flex-grow: 1;
+  }
 }

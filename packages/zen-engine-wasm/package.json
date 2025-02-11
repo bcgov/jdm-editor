@@ -1,16 +1,19 @@
 {
   "name": "@gorules/zen-engine-wasm",
-  "version": "0.7.0",
+  "version": "0.13.0",
   "description": "ZEN Engine WASM",
   "type": "module",
-  "module": "dist/zen_engine_wasm.js",
-  "types": "dist/zen_engine_wasm.d.ts",
+  "main": "index.js",
+  "types": "index.d.ts",
   "sideEffects": [
     "./dist/zen_engine_wasm.js",
     "./dist/snippets/*"
   ],
   "files": [
     "dist/",
+    "util/",
+    "index.js",
+    "index.d.ts",
     "package.json",
     "README.md",
     "LICENSE"

@@ -1,16 +1,13 @@
 import { syntaxTree } from '@codemirror/language';
 import type { SyntaxNodeRef } from '@lezer/common';
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { Typography, theme } from 'antd';
 import React, { useState } from 'react';
 
 import { CodeEditor } from './ce';
 
 const meta: Meta<typeof CodeEditor> = {
-  /* 👇 The title prop is optional.
-   * See https://storybook.js.org/docs/react/configure/overview#configure-story-loading
-   * to learn how to generate automatic titles
-   */
   title: 'CodeEditor',
   component: CodeEditor,
   argTypes: {
@@ -18,12 +15,35 @@ const meta: Meta<typeof CodeEditor> = {
     maxRows: { type: 'number' },
     disabled: { type: 'boolean' },
     placeholder: { type: 'string' },
-    type: { control: { type: 'radio' }, options: ['standard', 'template'] },
+    type: { control: { type: 'radio' }, options: ['standard', 'unary', 'template'] },
+    strict: { control: 'boolean' },
+    variableType: { control: { type: 'object' } },
+    expectedVariableType: { control: { type: 'object' } },
+    noStyle: { control: 'boolean' },
+    onChange: { table: { disable: true } },
+    onBlur: { table: { disable: true } },
+    onFocus: { table: { disable: true } },
   },
   args: {
     maxRows: 3,
     placeholder: 'Type expression...',
     type: 'standard',
+    disabled: false,
+    strict: false,
+    onChange: fn(),
+    onBlur: fn(),
+    onFocus: fn(),
+    variableType: {
+      customer: {
+        firstName: 'John',
+        lastName: 'Doe',
+        groups: ['admin'],
+      },
+      cart: {
+        totals: 100,
+        items: [{ id: 1, qty: 2, price: 20 }],
+      },
+    },
   },
 };
 

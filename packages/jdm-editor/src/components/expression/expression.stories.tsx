@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import React, { useState } from 'react';
 
 import type { ExpressionEntry } from './context/expression-store.context';
@@ -9,6 +10,15 @@ const expressionDefault: ExpressionEntry[] = [
   { id: '2', key: 'customer.isPremium', value: 'contains(customer.tags, "premium")' },
   { id: '3', key: 'customer.purchaseTotals', value: 'sum(map(customer.purchases, #.amount))' },
 ];
+
+const expressionDefaultObject = {
+  customer: {
+    firstName: 'John',
+    lastName: 'Doe',
+    tags: ['premium'],
+    purchases: [{ id: '', amount: 100 }],
+  },
+};
 
 const meta: Meta<typeof Expression> = {
   /* 👇 The title prop is optional.
@@ -21,8 +31,11 @@ const meta: Meta<typeof Expression> = {
     configurable: true,
     disabled: false,
     defaultValue: expressionDefault,
+    inputData: expressionDefaultObject,
+    onChange: fn(),
   },
   argTypes: {
+    inputData: { control: 'object' },
     manager: { table: { disable: true } },
     value: { table: { disable: true } },
   },

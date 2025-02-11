@@ -1,9 +1,12 @@
 // @ts-ignore
+import * as ZenEngineWasm from '@gorules/zen-engine-wasm';
 import { Preview } from '@storybook/react';
 import * as React from 'react';
 import { useDarkMode } from 'storybook-dark-mode';
 
 import { JdmConfigProvider } from '../src';
+
+await ZenEngineWasm.default();
 
 export const parameters = {
   actions: { argTypesRegex: '^on[A-Z].*' },

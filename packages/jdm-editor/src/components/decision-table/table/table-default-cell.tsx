@@ -1,11 +1,17 @@
 import type { CellContext } from '@tanstack/react-table';
 import React, { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { match } from 'ts-pattern';
+import { P, match } from 'ts-pattern';
 
 import { columnIdSelector } from '../../../helpers/components';
-import { AutosizeTextArea } from '../../autosize-text-area';
-import { LocalCodeEditor } from '../../code-editor/local-ce';
-import { type TableSchemaItem, useDecisionTableActions, useDecisionTableState } from '../context/dt-store.context';
+import type { DiffMetadata } from '../../decision-graph';
+import { DiffAutosizeTextArea } from '../../shared';
+import { DiffCodeEditor } from '../../shared/diff-ce';
+import {
+  type TableSchemaItem,
+  useDecisionTableActions,
+  useDecisionTableRaw,
+  useDecisionTableState,
+} from '../context/dt-store.context';
 
 export type TableDefaultCellProps = {
   context: CellContext<Record<string, string>, string>;
@@ -19,8 +25,9 @@ export const TableDefaultCell = memo<TableDefaultCellProps>(({ context, ...props
   } = context;
 
   const tableActions = useDecisionTableActions();
-  const { disabled, value } = useDecisionTableState(({ decisionTable, disabled }) => ({
+  const { disabled, value, diff } = useDecisionTableState(({ decisionTable, disabled }) => ({
     value: decisionTable?.rules?.[index]?.[id],
+    diff: (decisionTable?.rules?.[index] as any)?._diff?.fields?.[id],
     disabled,
   }));
 
@@ -55,8 +62,9 @@ export const TableDefaultCell = memo<TableDefaultCellProps>(({ context, ...props
         disabled,
         column,
         value: inner,
+        diff,
         onChange: commit,
-      }) || <TableInputCell disabled={disabled} column={column} value={inner} onChange={commit} />}
+      }) || <TableInputCell disabled={disabled} column={column} value={inner} onChange={commit} diff={diff} />}
     </div>
   );
 });
@@ -64,13 +72,55 @@ export const TableDefaultCell = memo<TableDefaultCellProps>(({ context, ...props
 export type TableCellProps = {
   column?: { colType: string } & TableSchemaItem;
   value: string;
+  diff?: DiffMetadata;
   onChange: (value: string) => void;
   disabled?: boolean;
 };
 
-const TableInputCell: React.FC<TableCellProps> = ({ column, value, onChange, disabled }) => {
+enum LocalVariableKind {
+  Root,
+  Derived,
+}
+
+const TableInputCell: React.FC<TableCellProps> = ({ column, value, onChange, disabled, diff }) => {
   const id = useMemo(() => crypto.randomUUID(), []);
   const textareaRef = useRef<HTMLTextAreaElement | HTMLDivElement>(null);
+  const raw = useDecisionTableRaw();
+
+  const { inputVariableType, localVariableType } = useDecisionTableState(
+    ({ inputVariableType, derivedVariableTypes }) => ({
+      inputVariableType,
+      localVariableType: match(column)
+        .with({ colType: 'input', field: P.string }, (c) => ({
+          type: LocalVariableKind.Derived,
+          value: derivedVariableTypes[c.field] ?? null,
+        }))
+        .otherwise(() => ({ type: LocalVariableKind.Root, value: inputVariableType })),
+    }),
+  );
+
+  useEffect(() => {
+    if (!inputVariableType) {
+      return;
+    }
+
+    if (!column?.field || localVariableType.type !== LocalVariableKind.Derived) {
+      return;
+    }
+
+    const state = raw.stateStore.getState();
+
+    const resultingType = inputVariableType.clone();
+    const calculatedType = inputVariableType.calculateType(column.field);
+    resultingType.set('$', calculatedType);
+
+    raw.stateStore.setState({
+      derivedVariableTypes: {
+        ...state.derivedVariableTypes,
+        [column.field]: resultingType,
+      },
+    });
+  }, [inputVariableType, column]);
 
   useEffect(() => {
     if (!textareaRef.current) {
@@ -102,13 +152,15 @@ const TableInputCell: React.FC<TableCellProps> = ({ column, value, onChange, dis
 
   if (!column) {
     return (
-      <AutosizeTextArea
+      <DiffAutosizeTextArea
         id={id}
         ref={textareaRef as any}
         className='grl-dt__cell__input'
         maxRows={3}
         value={value}
         disabled={disabled}
+        displayDiff={diff?.status === 'modified'}
+        previousValue={diff?.previousValue}
         spellCheck={false}
         onChange={(e) => onChange(e.target.value)}
       />
@@ -116,13 +168,17 @@ const TableInputCell: React.FC<TableCellProps> = ({ column, value, onChange, dis
   }
 
   return (
-    <LocalCodeEditor
+    <DiffCodeEditor
       ref={textareaRef as any}
       id={id}
-      type={match(column.colType)
-        .with('input', () => 'unary' as const)
+      type={match(column)
+        .with({ colType: 'input', field: P.string }, () => 'unary' as const)
         .otherwise(() => 'standard' as const)}
       className='grl-dt__cell__input'
+      noStyle
+      displayDiff={diff?.status === 'modified'}
+      previousValue={diff?.previousValue}
+      variableType={localVariableType.value}
       maxRows={3}
       value={value}
       disabled={disabled}

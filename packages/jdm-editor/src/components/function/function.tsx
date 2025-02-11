@@ -1,16 +1,18 @@
-import { FormatPainterOutlined } from '@ant-design/icons';
-import { Editor, type Monaco, useMonaco } from '@monaco-editor/react';
-import { Button, Spin, theme } from 'antd';
+import { createVariableType } from '@gorules/zen-engine-wasm';
+import { DiffEditor, Editor, type Monaco, useMonaco } from '@monaco-editor/react';
+import { Spin, theme } from 'antd';
 import { MarkerSeverity, type editor } from 'monaco-editor';
 import React, { useEffect, useRef, useState } from 'react';
+import { Panel, PanelGroup, PanelResizeHandle } from 'react-resizable-panels';
 import { useDebouncedCallback, useThrottledCallback } from 'use-debounce';
 
-import type { SimulationTrace, SimulationTraceDataFunction } from '../decision-graph/types/simulation.types';
-import { Stack } from '../stack';
+import '../../helpers/monaco';
+import { isWasmAvailable } from '../../helpers/wasm';
+import type { SimulationTrace, SimulationTraceDataFunction } from '../decision-graph/simulator/simulation.types';
 import { FunctionDebugger } from './function-debugger';
 import './function.scss';
-import { functionDefinitions } from './helpers/libs';
-import './monaco';
+import { variableTypeToTypescript } from './helpers/determine-type';
+import { type FunctionLibrary, functionDefinitions, functionLibraries } from './helpers/libs';
 
 export type FunctionProps = {
   disabled?: boolean;
@@ -18,9 +20,12 @@ export type FunctionProps = {
   disableDebug?: boolean;
   language?: string;
   value?: string;
+  previousValue?: string;
   onChange?: (value: string) => void;
   trace?: SimulationTrace<SimulationTraceDataFunction>;
   onMonacoReady?: (monaco: Monaco) => void;
+  libraries?: FunctionLibrary[];
+  inputData?: unknown;
   error?: {
     data: { nodeId: string; source?: string };
   };
@@ -36,6 +41,9 @@ export const Function: React.FC<FunctionProps> = ({
   trace,
   onMonacoReady,
   error,
+  inputData,
+  previousValue,
+  libraries = functionLibraries,
 }) => {
   const monaco = useMonaco();
   const mountedRef = useRef(false);
@@ -48,12 +56,19 @@ export const Function: React.FC<FunctionProps> = ({
   }, 100);
 
   const [editor, setEditor] = useState<editor.IStandaloneCodeEditor>();
+  const [diffEditor, setDiffEditor] = useState<editor.IStandaloneDiffEditor>();
   const resizeEditor = useThrottledCallback(() => editor?.layout(), 100, { trailing: true });
+  const resizeDiffEditor = useThrottledCallback(() => diffEditor?.layout(), 100, { trailing: true });
 
   useEffect(() => {
     window.addEventListener('resize', resizeEditor);
     return () => window.removeEventListener('resize', resizeEditor);
   }, [resizeEditor, editor]);
+
+  useEffect(() => {
+    window.addEventListener('resize', resizeDiffEditor);
+    return () => window.removeEventListener('resize', resizeDiffEditor);
+  }, [resizeDiffEditor, diffEditor]);
 
   useEffect(() => {
     if (!monaco) return;
@@ -76,16 +91,19 @@ export const Function: React.FC<FunctionProps> = ({
       onlyVisible: false,
     });
 
-    Object.entries(functionDefinitions.libs).forEach(([pkg, types]) => {
-      monaco.languages.typescript.javascriptDefaults.addExtraLib(`declare module '${pkg}' { ${types} }`, pkg);
-    });
+    monaco.languages.typescript.javascriptDefaults.setExtraLibs(
+      functionLibraries.map((lib) => ({
+        content: `declare module '${lib.name}' { ${lib.typeDef} }`,
+        filePath: lib.name,
+      })),
+    );
 
     Object.entries(functionDefinitions.globals).forEach(([pkg, types]) => {
       monaco.languages.typescript.javascriptDefaults.addExtraLib(types, `ts:${pkg}`);
     });
 
     onMonacoReady?.(monaco);
-  }, [monaco]);
+  }, [monaco, libraries]);
 
   useEffect(() => {
     if (mountedRef.current && value !== undefined && value !== innerValue) {
@@ -97,6 +115,25 @@ export const Function: React.FC<FunctionProps> = ({
     setInnerValue(value === undefined ? defaultValue : value);
     mountedRef.current = true;
   }, []);
+
+  useEffect(() => {
+    if (!monaco) return;
+
+    let data = 'any';
+    if (isWasmAvailable()) {
+      data = variableTypeToTypescript(createVariableType(inputData));
+    }
+
+    monaco.languages.typescript.javascriptDefaults.addExtraLib(
+      `
+    type Input = ${data};
+    type Output = Promise<any>;
+    
+    type Handler = (input: Input) => Output; 
+    `,
+      'ts:input.d.ts',
+    );
+  }, [monaco, inputData]);
 
   useEffect(() => {
     if (!monaco) {
@@ -199,50 +236,68 @@ export const Function: React.FC<FunctionProps> = ({
         } as any
       }
     >
-      <Stack
-        horizontal
-        horizontalAlign={'space-between'}
-        verticalAlign={'center'}
-        className={'grl-function__command-bar'}
-      >
-        <Stack gap={8} horizontal className='full-width'>
-          <Button
-            type='text'
-            size={'small'}
-            color='secondary'
-            icon={<FormatPainterOutlined />}
-            disabled={disabled}
-            onClick={() => {
-              editor?.getAction?.('editor.action.formatDocument')?.run?.();
-            }}
-          >
-            Format
-          </Button>
-        </Stack>
-      </Stack>
-      <div className={'grl-function__content'}>
-        <Editor
-          loading={<Spin size='large' />}
-          language={language}
-          value={innerValue}
-          onMount={(editor) => setEditor(editor)}
-          onChange={(value) => {
-            setInnerValue(value ?? '');
-            innerChange(value ?? '');
-          }}
-          theme={token.mode === 'dark' ? 'vs-dark' : 'light'}
-          height='100%'
-          options={{
-            automaticLayout: true,
-            contextmenu: false,
-            fontSize: 13,
-            fontFamily: 'var(--mono-font-family)',
-            readOnly: disabled,
-            tabSize: 2,
-          }}
-        />
-        {!disableDebug && <FunctionDebugger trace={trace} />}
-      </div>
+      <PanelGroup className='grl-function__content' direction='horizontal' autoSaveId='jdm-editor:function:layout'>
+        <Panel defaultSize={70} minSize={50}>
+          {previousValue ? (
+            <DiffEditor
+              loading={<Spin size='large' />}
+              language={language}
+              original={previousValue}
+              modified={innerValue}
+              onMount={(editor) => setDiffEditor(editor)}
+              theme={token.mode === 'dark' ? 'vs-dark' : 'light'}
+              height='100%'
+              options={{
+                ...monacoOptions,
+                readOnly: true,
+              }}
+            />
+          ) : (
+            <Editor
+              loading={<Spin size='large' />}
+              language={language}
+              value={innerValue}
+              onMount={(editor) => setEditor(editor)}
+              onChange={(value) => {
+                setInnerValue(value ?? '');
+                innerChange(value ?? '');
+              }}
+              theme={token.mode === 'dark' ? 'vs-dark' : 'light'}
+              height='100%'
+              options={{
+                ...monacoOptions,
+                readOnly: disabled,
+              }}
+            />
+          )}
+        </Panel>
+        {!disableDebug && (
+          <>
+            <PanelResizeHandle />
+            <Panel minSize={25}>
+              {!disableDebug && (
+                <FunctionDebugger libraries={functionLibraries} trace={trace} editor={editor} editorValue={value} />
+              )}
+            </Panel>
+          </>
+        )}
+      </PanelGroup>
     </div>
   );
+};
+
+const monacoOptions: editor.IStandaloneEditorConstructionOptions = {
+  automaticLayout: true,
+  contextmenu: false,
+  fontSize: 13,
+  fontFamily: 'var(--mono-font-family)',
+  tabSize: 2,
+  minimap: { enabled: false },
+  overviewRulerBorder: false,
+  scrollbar: {
+    verticalSliderSize: 4,
+    verticalScrollbarSize: 4,
+    horizontalScrollbarSize: 4,
+    horizontalSliderSize: 4,
+  },
 };

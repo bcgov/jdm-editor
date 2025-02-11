@@ -1,3 +1,4 @@
+import type { VariableType } from '@gorules/zen-engine-wasm';
 import equal from 'fast-deep-equal/es6/react';
 import { produce } from 'immer';
 import React, { useMemo } from 'react';
@@ -5,6 +6,7 @@ import type { StoreApi, UseBoundStore } from 'zustand';
 import { create } from 'zustand';
 
 import type { SchemaSelectProps } from '../../../helpers/components';
+import type { Diff, DiffMetadata } from '../../decision-graph/dg-types';
 import type { TableCellProps } from '../table/table-default-cell';
 
 export type TableExportOptions = {
@@ -21,6 +23,7 @@ export type TableSchemaItem = {
   name: string;
   field?: string;
   defaultValue?: string;
+  _diff?: DiffMetadata;
 };
 
 export type HitPolicy = 'first' | 'collect';
@@ -28,10 +31,14 @@ export type ColumnType = 'inputs' | 'outputs';
 
 export type DecisionTableType = {
   hitPolicy: HitPolicy | string;
+  passThorough?: boolean;
+  inputField?: string;
+  outputPath?: string;
+  executionMode?: 'single' | 'loop';
   inputs: TableSchemaItem[];
   outputs: TableSchemaItem[];
   rules: Record<string, string>[];
-};
+} & Diff;
 
 const cleanupTableRule = (
   decisionTable: DecisionTableType,
@@ -76,6 +83,11 @@ export const parseDecisionTable = (decisionTable?: DecisionTableType) => {
     inputs: decisionTable?.inputs || [],
     outputs: decisionTable?.outputs || [],
     rules: decisionTable?.rules || [],
+    passThorough: decisionTable?.passThorough ?? false,
+    inputField: decisionTable?.inputField,
+    outputPath: decisionTable?.outputPath,
+    executionMode: decisionTable?.executionMode ?? 'single',
+    _diff: decisionTable?._diff,
   };
 
   if (dt.inputs?.length === 0) {
@@ -122,6 +134,10 @@ export type DecisionTableStoreType = {
 
     minColWidth: number;
     colWidth: number;
+
+    inputData?: unknown;
+    inputVariableType?: VariableType;
+    derivedVariableTypes: Record<string, VariableType>;
 
     inputsSchema?: SchemaSelectProps[];
     outputsSchema?: SchemaSelectProps[];
@@ -184,6 +200,10 @@ export const DecisionTableProvider: React.FC<React.PropsWithChildren<DecisionTab
 
         inputsSchema: undefined,
         outputsSchema: undefined,
+
+        derivedVariableTypes: {},
+        inputVariableType: undefined,
+        inputData: undefined,
       })),
     [],
   );
